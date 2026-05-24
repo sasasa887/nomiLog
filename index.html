@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🍶 のみログ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --card: #1e2230;
+    --card2: #252a3a;
+    --border: rgba(255,255,255,0.07);
+    --amber: #f0a500;
+    --amber-light: #ffd166;
+    --amber-glow: rgba(240,165,0,0.15);
+    --red: #e05252;
+    --green: #4eca8b;
+    --text: #f0eeea;
+    --muted: #8892a4;
+    --sake: #c8a97e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(240,165,0,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 90%, rgba(200,169,126,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 16px 100px; }
+
+  /* Header */
+  header {
+    padding: 28px 0 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  header .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    color: var(--amber);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  header .logo span { color: var(--sake); font-style: italic; }
+  header .tagline {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+  }
+
+  /* Profile form */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .profile-grid .full { grid-column: 1 / -1; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 5px;
+    letter-spacing: 0.05em;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus { border-color: var(--amber); }
+  .form-group select option { background: var(--surface); }
+
+  /* Profile summary */
+  .profile-summary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .profile-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--amber-glow);
+    border: 2px solid var(--amber);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .profile-name { font-size: 1rem; font-weight: 700; }
+  .profile-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .btn-edit {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-edit:hover { border-color: var(--amber); color: var(--amber); }
+
+  /* Gauge */
+  .gauge-section { margin-bottom: 16px; }
+  .gauge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .gauge-label { font-size: 0.72rem; color: var(--muted); }
+  .gauge-value { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+  .gauge-value span { font-size: 0.8rem; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .gauge-limit { font-size: 0.72rem; color: var(--muted); text-align: right; }
+
+  .gauge-track {
+    height: 14px;
+    background: var(--bg);
+    border-radius: 99px;
+    overflow: visible;
+    position: relative;
+    border: 1px solid var(--border);
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1), background 0.4s;
+    position: relative;
+    max-width: 100%;
+  }
+  .gauge-fill.safe { background: linear-gradient(90deg, var(--green), #8be0b8); box-shadow: 0 0 12px rgba(78,202,139,0.4); }
+  .gauge-fill.warn { background: linear-gradient(90deg, var(--amber), var(--amber-light)); box-shadow: 0 0 12px rgba(240,165,0,0.5); }
+  .gauge-fill.over { background: linear-gradient(90deg, #e07532, var(--red)); box-shadow: 0 0 12px rgba(224,82,82,0.5); }
+  .gauge-marker {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    width: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    opacity: 0.5;
+  }
+  .gauge-marker::after {
+    content: '適量';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.55rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-top: 12px;
+  }
+  .status-badge.safe { background: rgba(78,202,139,0.15); color: var(--green); border: 1px solid rgba(78,202,139,0.3); }
+  .status-badge.warn { background: rgba(240,165,0,0.15); color: var(--amber); border: 1px solid rgba(240,165,0,0.3); }
+  .status-badge.over { background: rgba(224,82,82,0.15); color: var(--red); border: 1px solid rgba(224,82,82,0.3); }
+
+  /* Drinks grid */
+  .drinks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .drink-btn {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .drink-btn:active { transform: scale(0.96); }
+  .drink-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--amber-glow);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .drink-btn:hover::before { opacity: 1; }
+  .drink-btn .drink-icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+  .drink-btn .drink-name { font-size: 0.78rem; font-weight: 700; color: var(--text); display: block; }
+  .drink-btn .drink-detail { font-size: 0.65rem; color: var(--muted); margin-top: 2px; display: block; }
+  .drink-btn .drink-gram { font-size: 0.65rem; color: var(--amber); margin-top: 4px; display: block; font-weight: 700; }
+
+  /* Log list */
+  .log-list { display: flex; flex-direction: column; gap: 8px; }
+  .log-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .log-item .li-icon { font-size: 1.3rem; }
+  .log-item .li-name { font-size: 0.82rem; font-weight: 700; flex: 1; }
+  .log-item .li-gram { font-size: 0.72rem; color: var(--amber); }
+  .log-item .li-time { font-size: 0.65rem; color: var(--muted); }
+  .log-item .li-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+  .log-item .li-del:hover { color: var(--red); }
+
+  .empty-log {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+  }
+
+  /* Reset button */
+  .btn-reset {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(224,82,82,0.3);
+    color: var(--red);
+    border-radius: 10px;
+    padding: 11px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+    margin-top: 12px;
+  }
+  .btn-reset:hover { background: rgba(224,82,82,0.1); }
+
+  /* Save profile btn */
+  .btn-primary {
+    display: block;
+    width: 100%;
+    background: linear-gradient(135deg, var(--amber), #e08c00);
+    border: none;
+    color: #0d0f14;
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-top: 14px;
+    box-shadow: 0 4px 20px rgba(240,165,0,0.25);
+  }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* Info strip */
+  .info-strip {
+    background: rgba(240,165,0,0.07);
+    border: 1px solid rgba(240,165,0,0.15);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+  .info-strip strong { color: var(--amber-light); }
+
+  /* Tab bar */
+  .tab-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(13,15,20,0.95);
+    border-top: 1px solid var(--border);
+    display: flex;
+    backdrop-filter: blur(12px);
+    z-index: 100;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 12px 4px 16px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+  }
+  .tab-btn .tab-icon { font-size: 1.3rem; }
+  .tab-btn.active { color: var(--amber); }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Water intake tip */
+  .water-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(78,202,139,0.07);
+    border: 1px solid rgba(78,202,139,0.15);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    color: var(--green);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo">のみ<span>ログ</span></div>
+    <div class="tagline">Drink Tracker · 今日の飲酒量を記録</div>
+  </header>
+
+  <!-- ===== HOME PAGE ===== -->
+  <div id="page-home" class="page active">
+
+    <!-- Profile bar -->
+    <div id="profile-bar" class="card" style="margin-bottom:16px">
+      <div id="no-profile" style="text-align:center; padding:8px 0;">
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">プロフィールを設定してください</div>
+        <button class="btn-primary" onclick="switchTab('profile')" style="max-width:200px;margin:0 auto;padding:10px">
+          設定へ →
+        </button>
+      </div>
+      <div id="has-profile" style="display:none">
+        <div class="profile-summary">
+          <div class="profile-avatar" id="avatar-emoji">🧑</div>
+          <div>
+            <div class="profile-name" id="display-name">—</div>
+            <div class="profile-meta" id="display-meta">—</div>
+          </div>
+          <button class="btn-edit" onclick="switchTab('profile')">編集</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gauge -->
+    <div class="card">
+      <div class="card-title">今日の飲酒量</div>
+      <div class="gauge-section">
+        <div class="gauge-header">
+          <div>
+            <div class="gauge-label">摂取アルコール</div>
+            <div class="gauge-value" id="total-gram">0<span>g</span></div>
+          </div>
+          <div>
+            <div class="gauge-limit" id="limit-label">適量: —g</div>
+            <div class="gauge-limit" id="date-label" style="margin-top:2px">—</div>
+          </div>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill safe" id="gauge-fill" style="width:0%"></div>
+          <div class="gauge-marker" id="gauge-marker" style="left:66.7%"></div>
+        </div>
+        <div id="status-area" style="margin-top:10px">
+          <span class="status-badge safe" id="status-badge">😊 快適な範囲です</span>
+        </div>
+      </div>
+
+      <div class="info-strip" style="margin-top:14px">
+        純アルコール量(g) = <strong>量(ml) × 度数(%) × 0.8</strong><br>
+        厚生労働省：男性 <strong>20g以下</strong>／女性 <strong>10g以下</strong> が1日の適量目安
+      </div>
+      <div class="water-tip">💧 お酒1杯ごとに水を1杯飲むと◎
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <div class="card-title">飲んだもの記録</div>
+      <div id="log-list" class="log-list">
+        <div class="empty-log">🍵 まだ記録がありません<br>下の「追加」タブからお酒を追加しよう</div>
+      </div>
+      <button class="btn-reset" onclick="resetLog()" id="reset-btn" style="display:none">🗑 今日のログをリセット</button>
+    </div>
+  </div>
+
+  <!-- ===== ADD PAGE ===== -->
+  <div id="page-add" class="page">
+    <div class="section-label">お酒を追加</div>
+    <div class="drinks-grid" id="drinks-grid"></div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">カスタム入力</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label>量 (ml)</label>
+          <input type="number" id="custom-ml" placeholder="350" min="0">
+        </div>
+        <div class="form-group">
+          <label>度数 (%)</label>
+          <input type="number" id="custom-pct" placeholder="5" min="0" max="100" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>名前</label>
+          <input type="text" id="custom-name" placeholder="お酒名">
+        </div>
+      </div>
+      <div id="custom-preview" style="text-align:center;padding:8px 0;font-size:0.78rem;color:var(--amber)"></div>
+      <button class="btn-primary" onclick="addCustom()">追加する</button>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE PAGE ===== -->
+  <div id="page-profile" class="page">
+    <div class="section-label">プロフィール設定</div>
+    <div class="card">
+      <div class="profile-grid">
+        <div class="form-group full">
+          <label>お名前</label>
+          <input type="text" id="p-name" placeholder="山田 太郎">
+        </div>
+        <div class="form-group">
+          <label>性別</label>
+          <select id="p-gender">
+            <option value="male">男性</option>
+            <option value="female">女性</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>年齢</label>
+          <input type="number" id="p-age" placeholder="30" min="20" max="100">
+        </div>
+        <div class="form-group">
+          <label>身長 (cm)</label>
+          <input type="number" id="p-height" placeholder="170" min="100" max="220">
+        </div>
+        <div class="form-group">
+          <label>体重 (kg)</label>
+          <input type="number" id="p-weight" placeholder="65" min="30" max="200">
+        </div>
+      </div>
+
+      <div id="widmark-preview" class="info-strip" style="margin-top:14px;display:none">
+        <div>📊 <strong>Widmark式による参考値</strong></div>
+        <div id="widmark-text" style="margin-top:4px"></div>
+      </div>
+
+      <button class="btn-primary" onclick="saveProfile()">保存する</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">適量の目安について</div>
+      <div style="font-size:0.75rem;color:var(--muted);line-height:1.8">
+        <p>厚生労働省「健康日本21」では、1日の純アルコール量の目安を<strong style="color:var(--amber-light)">男性20g、女性10g</strong>としています。</p>
+        <p style="margin-top:8px">体重・性別によりアルコール分解速度は異なります。あくまで参考値としてご利用ください。</p>
+        <p style="margin-top:8px;color:var(--red)">⚠️ 未成年の飲酒は法律で禁止されています。</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-home" onclick="switchTab('home')">
+    <span class="tab-icon">📊</span>記録
+  </button>
+  <button class="tab-btn" id="tab-add" onclick="switchTab('add')">
+    <span class="tab-icon">➕</span>追加
+  </button>
+  <button class="tab-btn" id="tab-profile" onclick="switchTab('profile')">
+    <span class="tab-icon">👤</span>プロフィール
+  </button>
+</div>
+
+<script>
+// ===== DRINK TEMPLATES =====
+const DRINKS = [
+  { id:'beer350',  icon:'🍺', name:'ビール',       sub:'350ml · 5%',  ml:350, pct:5   },
+  { id:'beer500',  icon:'🍺', name:'ビール大',      sub:'500ml · 5%',  ml:500, pct:5   },
+  { id:'sake',     icon:'🍶', name:'日本酒',        sub:'1合 180ml · 15%', ml:180, pct:15  },
+  { id:'wine',     icon:'🍷', name:'ワイン',        sub:'グラス 120ml · 12%', ml:120, pct:12 },
+  { id:'chuhai',   icon:'🥤', name:'チューハイ',    sub:'350ml · 5%',  ml:350, pct:5   },
+  { id:'highball', icon:'🥃', name:'ハイボール',    sub:'350ml · 7%',  ml:350, pct:7   },
+  { id:'shochu',   icon:'🫗', name:'焼酎',          sub:'1杯 90ml · 25%', ml:90, pct:25  },
+  { id:'whisky',   icon:'🥃', name:'ウイスキー',    sub:'シングル 30ml · 40%', ml:30, pct:40 },
+];
+
+function calcGram(ml, pct) { return Math.round(ml * (pct/100) * 0.8 * 10) / 10; }
+
+// ===== STATE =====
+let state = {
+  profile: null,
+  log: [],
+};
+
+function loadState() {
+  try {
+    const p = localStorage.getItem('nomi_profile');
+    if (p) state.profile = JSON.parse(p);
+    const l = localStorage.getItem('nomi_log_' + todayKey());
+    if (l) state.log = JSON.parse(l);
+  } catch(e) {}
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+
+function saveProfile() {
+  const name = document.getElementById('p-name').value.trim();
+  const gender = document.getElementById('p-gender').value;
+  const age = parseInt(document.getElementById('p-age').value) || 0;
+  const height = parseFloat(document.getElementById('p-height').value) || 0;
+  const weight = parseFloat(document.getElementById('p-weight').value) || 0;
+
+  if (!name) { alert('お名前を入力してください'); return; }
+  if (age < 20) { alert('20歳未満の方はご利用になれません'); return; }
+
+  state.profile = { name, gender, age, height, weight };
+  localStorage.setItem('nomi_profile', JSON.stringify(state.profile));
+  renderProfile();
+  renderGauge();
+  switchTab('home');
+}
+
+function getLimit() {
+  if (!state.profile) return 20;
+  return state.profile.gender === 'female' ? 10 : 20;
+}
+
+function renderProfile() {
+  const p = state.profile;
+  if (!p) {
+    document.getElementById('no-profile').style.display = 'block';
+    document.getElementById('has-profile').style.display = 'none';
+    return;
+  }
+  document.getElementById('no-profile').style.display = 'none';
+  document.getElementById('has-profile').style.display = 'block';
+  document.getElementById('display-name').textContent = p.name;
+  document.getElementById('display-meta').textContent =
+    `${p.gender === 'female' ? '女性' : '男性'} · ${p.age}歳 · ${p.height}cm · ${p.weight}kg`;
+  document.getElementById('avatar-emoji').textContent = p.gender === 'female' ? '👩' : '👨';
+
+  // Fill form
+  document.getElementById('p-name').value = p.name;
+  document.getElementById('p-gender').value = p.gender;
+  document.getElementById('p-age').value = p.age;
+  document.getElementById('p-height').value = p.height;
+  document.getElementById('p-weight').value = p.weight;
+
+  renderWidmark();
+}
+
+function renderWidmark() {
+  const pAge = document.getElementById('p-age').value;
+  const pGender = document.getElementById('p-gender').value;
+  const pWeight = document.getElementById('p-weight').value;
+  if (!pAge || !pWeight) return;
+  const r = pGender === 'female' ? 0.55 : 0.68;
+  const limit = pGender === 'female' ? 10 : 20;
+  const bac = ((limit / (parseFloat(pWeight) * r)) * 100).toFixed(3);
+  document.getElementById('widmark-preview').style.display = 'block';
+  document.getElementById('widmark-text').innerHTML =
+    `適量(${limit}g)摂取時の推定血中アルコール濃度: <strong style="color:var(--amber-light)">${bac}%</strong><br>
+     一般的に0.05%以上で酔いを感じ始めます`;
+}
+
+['p-gender','p-age','p-weight'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', renderWidmark);
+  document.getElementById(id)?.addEventListener('input', renderWidmark);
+});
+
+function renderGauge() {
+  const total = state.log.reduce((s, item) => s + item.gram, 0);
+  const limit = getLimit();
+  const pct = Math.min((total / limit) * 100, 100);
+  const overflow = total > limit * 1.5;
+
+  document.getElementById('total-gram').innerHTML = `${Math.round(total*10)/10}<span>g</span>`;
+  document.getElementById('limit-label').textContent = `適量: ${limit}g`;
+
+  const d = new Date();
+  document.getElementById('date-label').textContent =
+    `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`;
+
+  const fill = document.getElementById('gauge-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'gauge-fill ' + (total <= limit ? 'safe' : total <= limit * 1.5 ? 'warn' : 'over');
+
+  const marker = document.getElementById('gauge-marker');
+  marker.style.left = '66.67%'; // always at 2/3 of bar = safe zone end
+
+  const badge = document.getElementById('status-badge');
+  if (total === 0) {
+    badge.className = 'status-badge safe';
+    badge.textContent = '📝 まだ飲んでいません';
+  } else if (total <= limit * 0.5) {
+    badge.className = 'status-badge safe';
+    badge.textContent = '😊 まだ余裕があります';
+  } else if (total <= limit) {
+    badge.className = 'status-badge warn';
+    badge.textContent = '⚠️ 適量に近づいています';
+  } else if (total <= limit * 1.5) {
+    badge.className = 'status-badge over';
+    badge.textContent = '🚨 適量を超えています！水を飲みましょう';
+  } else {
+    badge.className = 'status-badge over';
+    badge.textContent = '🛑 かなり飲みすぎです。お水を！';
+  }
+}
+
+function renderLog() {
+  const list = document.getElementById('log-list');
+  const resetBtn = document.getElementById('reset-btn');
+  if (state.log.length === 0) {
+    list.innerHTML = '<div class="empty-log">🍵 まだ記録がありません<br>「追加」タブからお酒を追加しよう</div>';
+    resetBtn.style.display = 'none';
+    return;
+  }
+  resetBtn.style.display = 'block';
+  list.innerHTML = state.log.map((item, i) => `
+    <div class="log-item">
+      <span class="li-icon">${item.icon}</span>
+      <div style="flex:1">
+        <div class="li-name">${item.name}</div>
+        <div class="li-detail" style="font-size:0.65rem;color:var(--muted)">${item.detail}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="li-gram">+${item.gram}g</div>
+        <div class="li-time">${item.time}</div>
+      </div>
+      <button class="li-del" onclick="removeLog(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addDrink(drink) {
+  const gram = calcGram(drink.ml, drink.pct);
+  const now = new Date();
+  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  state.log.unshift({ icon: drink.icon, name: drink.name, detail: drink.sub, gram, time });
+  saveLog();
+  renderLog();
+  renderGauge();
+  switchTab('home');
+}
+
+function addCustom() {
+  const ml = parseFloat(document.getElementById('custom-ml').value);
+  const pct = parseFloat(document.getElementById('custom-pct').value);
+  const name = document.getElementById('custom-name').value.trim() || 'カスタム';
+  if (!ml || !pct) { alert('量と度数を入力してください'); return; }
+  addDrink({ icon: '🥂', name, sub: `${ml}ml · ${pct}%`, ml, pct });
+  document.getElementById('custom-ml').value = '';
+  document.getElementById('custom-pct').value = '';
+  document.getElementById('custom-name').value = '';
+  document.getElementById('custom-preview').textContent = '';
+}
+
+function removeLog(i) {
+  state.log.splice(i, 1);
+  saveLog();
+  renderLog();
+  renderGauge();
+}
+
+function resetLog() {
+  if (!confirm('今日の記録をリセットしますか？')) return;
+  state.log = [];
+  saveLog();
+  renderLog();
+  renderGauge();
+}
+
+function saveLog() {
+  localStorage.setItem('nomi_log_' + todayKey(), JSON.stringify(state.log));
+}
+
+// ===== DRINKS GRID =====
+function renderDrinksGrid() {
+  document.getElementById('drinks-grid').innerHTML = DRINKS.map(d => {
+    const g = calcGram(d.ml, d.pct);
+    return `
+      <button class="drink-btn" onclick='addDrink(${JSON.stringify(d)})'>
+        <span class="drink-icon">${d.icon}</span>
+        <span class="drink-name">${d.name}</span>
+        <span class="drink-detail">${d.sub}</span>
+        <span class="drink-gram">純アルコール ${g}g</span>
+      </button>
+    `;
+  }).join('');
+}
+
+// Custom preview
+['custom-ml','custom-pct'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    const ml = parseFloat(document.getElementById('custom-ml').value);
+    const pct = parseFloat(document.getElementById('custom-pct').value);
+    if (ml && pct) {
+      const g = calcGram(ml, pct);
+      document.getElementById('custom-preview').textContent = `純アルコール量: 約 ${g}g`;
+    } else {
+      document.getElementById('custom-preview').textContent = '';
+    }
+  });
+});
+
+// ===== TABS =====
+function switchTab(tab) {
+  ['home','add','profile'].forEach(t => {
+    document.getElementById(`page-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
+  });
+}
+
+// ===== INIT =====
+loadState();
+renderProfile();
+renderGauge();
+renderLog();
+renderDrinksGrid();
+</script>
+</body>
+</html>
