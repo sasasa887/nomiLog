@@ -13,14 +13,14 @@
 <div class="wrapper">
   <header>
     <div class="logo">のみ<span>ログ</span></div>
-    <div class="tagline">Drink Tracker · 今日の飲酒量とカロリーを記録</div>
+    <div class="tagline">Drink Tracker · 飲酒量とカロリーを記録</div>
   </header>
 
-  <!-- ===== HOME PAGE ===== -->
+  <!-- ========== PAGE: 今日 ========== -->
   <div id="page-home" class="page active">
 
     <!-- Profile bar -->
-    <div id="profile-bar" class="card">
+    <div class="card" id="profile-bar">
       <div id="no-profile">
         <div class="empty-profile-msg">プロフィールを設定してください</div>
         <button class="btn-primary btn-center" onclick="switchTab('profile')">設定へ →</button>
@@ -53,9 +53,9 @@
       </div>
     </div>
 
-    <!-- Main gauge card -->
+    <!-- Gauge card -->
     <div class="card">
-      <div class="card-title">アルコール摂取量</div>
+      <div class="card-title">今日のアルコール摂取量</div>
       <div class="gauge-section">
         <div class="gauge-header">
           <div>
@@ -73,9 +73,7 @@
         </div>
         <span class="status-badge safe" id="status-badge">📝 まだ飲んでいません</span>
       </div>
-
       <hr class="gauge-divider">
-
       <div class="card-title" style="margin-bottom:10px">カロリー</div>
       <div class="gauge-section">
         <div class="gauge-header">
@@ -83,9 +81,7 @@
             <div class="gauge-label">今日の飲酒カロリー</div>
             <div class="gauge-value gauge-value--pink" id="total-kcal">0<span>kcal</span></div>
           </div>
-          <div>
-            <div class="gauge-limit">目安: 400kcal</div>
-          </div>
+          <div><div class="gauge-limit">目安: 400kcal</div></div>
         </div>
         <div class="gauge-track">
           <div class="gauge-fill kcal-bar" id="kcal-fill" style="width:0%"></div>
@@ -93,7 +89,6 @@
         </div>
         <div class="kcal-equiv" id="kcal-equiv"></div>
       </div>
-
       <div class="info-strip">
         純アルコール1g = <strong>約7.1 kcal</strong>（糖質・添加物は別途）<br>
         適量目安：男性 <strong>20g</strong>／女性 <strong>10g</strong> / 日
@@ -101,9 +96,35 @@
       <div class="water-tip">💧 お酒1杯ごとに水を1杯飲むと◎</div>
     </div>
 
+    <!-- Health Character card -->
+    <div class="card">
+      <div class="card-title">あなたの健康キャラクター</div>
+      <div class="character-row">
+        <div class="character-emoji-wrap">
+          <div class="char-emoji" id="char-emoji">😵</div>
+          <div class="char-level-badge" id="char-level-badge">Lv.1</div>
+        </div>
+        <div class="char-info">
+          <div class="char-name" id="char-name">ヘロヘロ</div>
+          <div class="char-streak" id="char-streak">連続セーフ: 0日</div>
+          <div class="char-progress-wrap">
+            <div class="char-progress-track">
+              <div class="char-progress-fill" id="char-progress" style="width:0%"></div>
+            </div>
+            <span class="char-progress-label" id="char-progress-label">次のレベルまで: —日</span>
+          </div>
+        </div>
+      </div>
+      <div class="benefits-grid" id="benefits-grid"></div>
+      <div class="age-improve-row" id="age-improve-row" style="display:none">
+        <div class="age-chip">💆 推定肌年齢 <strong id="skin-age-val">—</strong></div>
+        <div class="age-chip">🫀 推定体内年齢 <strong id="body-age-val">—</strong></div>
+      </div>
+    </div>
+
     <!-- Log -->
     <div class="card">
-      <div class="card-title">飲んだもの記録</div>
+      <div class="card-title">今日の記録</div>
       <div id="log-list" class="log-list">
         <div class="empty-log">🍵 まだ記録がありません<br>「追加」タブからお酒を追加しよう</div>
       </div>
@@ -111,35 +132,148 @@
         🗑 今日のログをリセット
       </button>
     </div>
-  </div>
+  </div><!-- /page-home -->
 
-  <!-- ===== ADD PAGE ===== -->
+  <!-- ========== PAGE: カレンダー ========== -->
+  <div id="page-history" class="page">
+
+    <!-- Period selector + stats -->
+    <div class="section-label">期間別サマリー</div>
+    <div class="period-selector">
+      <button class="period-btn active" data-period="1m" onclick="setPeriod('1m')">1ヶ月</button>
+      <button class="period-btn" data-period="3m" onclick="setPeriod('3m')">3ヶ月</button>
+      <button class="period-btn" data-period="6m" onclick="setPeriod('6m')">半年</button>
+    </div>
+    <div class="card" id="period-stats-card">
+      <div id="period-stats-content">
+        <!-- JS rendered -->
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="section-label">カレンダー</div>
+    <div class="card" style="padding:14px">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="prevMonth()">&#8592;</button>
+        <span class="cal-month-label" id="cal-month-label">—</span>
+        <button class="cal-nav-btn" onclick="nextMonth()">&#8594;</button>
+      </div>
+      <div class="cal-weekdays">
+        <span class="sun">日</span><span>月</span><span>火</span>
+        <span>水</span><span>木</span><span>金</span><span class="sat">土</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- Risk Legend -->
+    <div class="risk-legend card">
+      <div class="card-title">危険度の目安</div>
+      <div class="legend-list">
+        <div class="legend-item"><span class="legend-dot risk-none"></span>記録なし</div>
+        <div class="legend-item"><span class="legend-dot risk-1"></span>良好（〜50%）</div>
+        <div class="legend-item"><span class="legend-dot risk-2"></span>適量内（〜100%）</div>
+        <div class="legend-item"><span class="legend-dot risk-3"></span>注意（〜200%）</div>
+        <div class="legend-item"><span class="legend-dot risk-4"></span>危険（〜300%）</div>
+        <div class="legend-item"><span class="legend-dot risk-5"></span>深刻（300%超）</div>
+      </div>
+    </div>
+
+    <!-- Selected day detail -->
+    <div class="card" id="day-detail" style="display:none">
+      <div class="day-detail-header">
+        <span class="card-title" id="day-detail-title">—</span>
+        <button class="btn-add-to-day" onclick="goAddForSelectedDay()">＋ 追加</button>
+      </div>
+      <div id="day-detail-log" class="log-list"></div>
+    </div>
+  </div><!-- /page-history -->
+
+  <!-- ========== PAGE: 追加 ========== -->
   <div id="page-add" class="page">
-    <div class="section-label">お酒を追加</div>
+
+    <!-- Date selector -->
+    <div class="card date-selector-card">
+      <div class="date-sel-row">
+        <span class="date-sel-label">🗓 追加する日付</span>
+        <input type="date" id="add-date" class="date-input" onchange="onAddDateChange()">
+        <!-- <button class="btn-today" onclick="setAddDateToday()">今日</button> -->
+      </div>
+      <div class="date-sel-note" id="date-sel-note">今日に追加します</div>
+    </div>
+
+    <!-- Built-in templates -->
+    <div class="section-label">定番テンプレート</div>
     <div class="drinks-grid" id="drinks-grid"></div>
 
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">カスタム入力</div>
+    <!-- My Templates -->
+    <div class="section-label" style="margin-top:18px">
+      マイテンプレート
+      <span style="font-size:0.6rem;color:var(--muted);letter-spacing:0;text-transform:none;margin-left:6px">保存済みのお酒</span>
+    </div>
+    <div id="my-templates-empty" class="empty-log" style="display:none">
+      まだカスタムテンプレートがありません
+    </div>
+    <div class="drinks-grid" id="my-drinks-grid"></div>
+    <button class="btn-add-template" onclick="showTemplateForm(null)">
+      ＋ テンプレートを追加
+    </button>
+
+    <!-- Template form -->
+    <div id="template-form" class="card" style="display:none;margin-top:12px">
+      <div class="card-title" id="tpl-form-title">テンプレートを追加</div>
+      <input type="hidden" id="tpl-edit-id">
       <div class="custom-input-grid">
         <div class="form-group">
+          <label>名前</label>
+          <input type="text" id="tpl-name" placeholder="梅酒">
+        </div>
+        <div class="form-group">
+          <label>アイコン</label>
+          <input type="text" id="tpl-icon" placeholder="🍹" maxlength="2">
+        </div>
+        <div class="form-group">
           <label>量 (ml)</label>
-          <input type="number" id="custom-ml" placeholder="350" min="0">
+          <input type="number" id="tpl-ml" placeholder="200" oninput="updateTplPreview()">
         </div>
         <div class="form-group">
           <label>度数 (%)</label>
-          <input type="number" id="custom-pct" placeholder="5" min="0" max="100" step="0.1">
+          <input type="number" id="tpl-pct" placeholder="8" step="0.1" oninput="updateTplPreview()">
+        </div>
+        <div class="form-group">
+          <label>kcal (任意)</label>
+          <input type="number" id="tpl-kcal" placeholder="自動計算">
+        </div>
+      </div>
+      <div class="custom-preview" id="tpl-preview"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary" style="flex:1;margin-top:10px" onclick="saveTemplate()">保存</button>
+        <button class="btn-cancel" onclick="hideTemplateForm()">キャンセル</button>
+      </div>
+    </div>
+
+    <!-- One-time custom input -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">今回だけの入力</div>
+      <div class="custom-input-grid">
+        <div class="form-group">
+          <label>量 (ml)</label>
+          <input type="number" id="custom-ml" placeholder="350" min="0" oninput="updateCustomPreview()">
+        </div>
+        <div class="form-group">
+          <label>度数 (%)</label>
+          <input type="number" id="custom-pct" placeholder="5" min="0" max="100" step="0.1" oninput="updateCustomPreview()">
         </div>
         <div class="form-group">
           <label>名前</label>
           <input type="text" id="custom-name" placeholder="お酒名">
         </div>
       </div>
-      <div id="custom-preview" class="custom-preview"></div>
+      <div class="custom-preview" id="custom-preview"></div>
       <button class="btn-primary" onclick="addCustom()">追加する</button>
     </div>
-  </div>
+  </div><!-- /page-add -->
 
-  <!-- ===== PROFILE PAGE ===== -->
+  <!-- ========== PAGE: プロフィール ========== -->
   <div id="page-profile" class="page">
     <div class="section-label">プロフィール設定</div>
     <div class="card">
@@ -161,19 +295,17 @@
         </div>
         <div class="form-group">
           <label>身長 (cm)</label>
-          <input type="number" id="p-height" placeholder="170" min="100" max="220">
+          <input type="number" id="p-height" placeholder="170">
         </div>
         <div class="form-group">
           <label>体重 (kg)</label>
-          <input type="number" id="p-weight" placeholder="65" min="30" max="200">
+          <input type="number" id="p-weight" placeholder="65">
         </div>
       </div>
-
       <div id="widmark-preview" class="info-strip" style="margin-top:14px;display:none">
         <div>📊 <strong>Widmark式による参考値</strong></div>
         <div id="widmark-text" style="margin-top:4px"></div>
       </div>
-
       <button class="btn-primary" onclick="saveProfile()">保存する</button>
       <button class="btn-danger" id="btn-clear-profile" onclick="clearProfile()" style="display:none">
         🗑 プロフィールを削除
@@ -185,27 +317,30 @@
       <div class="info-text">
         <p>厚生労働省「健康日本21」では、1日の純アルコール量の目安を<strong>男性20g、女性10g</strong>としています。</p>
         <p>アルコールは1g約7.1kcal。ビール350mlで約140kcal、日本酒1合で約185kcalになります。</p>
-        <p>飲酒カロリーは通常の食事カロリーに<strong class="text-pink">上乗せ</strong>されるため、ダイエット中は特に注意が必要です。</p>
+        <p>飲酒カロリーは通常の食事カロリーに<strong class="text-pink">上乗せ</strong>されるため、ダイエット中は特に注意です。</p>
         <p class="text-red">⚠️ 未成年の飲酒は法律で禁止されています。</p>
       </div>
     </div>
-  </div>
+  </div><!-- /page-profile -->
 
 </div><!-- /wrapper -->
 
-<!-- Toast notification -->
+<!-- Toast -->
 <div id="toast" class="toast"></div>
 
-<!-- Tab bar -->
+<!-- Tab bar (4 tabs) -->
 <div class="tab-bar">
   <button class="tab-btn active" id="tab-home" onclick="switchTab('home')">
-    <span class="tab-icon">📊</span>記録
+    <span class="tab-icon">📊</span>今日
+  </button>
+  <button class="tab-btn" id="tab-history" onclick="switchTab('history')">
+    <span class="tab-icon">📅</span>履歴
   </button>
   <button class="tab-btn" id="tab-add" onclick="switchTab('add')">
     <span class="tab-icon">➕</span>追加
   </button>
   <button class="tab-btn" id="tab-profile" onclick="switchTab('profile')">
-    <span class="tab-icon">👤</span>プロフィール
+    <span class="tab-icon">👤</span>設定
   </button>
 </div>
 
