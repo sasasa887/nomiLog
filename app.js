@@ -856,3 +856,101 @@ renderMyDrinksGrid();
 initAddDate();
 renderCalendar();
 renderPeriodStats();
+initInstallBanner();
+
+// ============================================================
+//  INSTALL GUIDE（ホーム画面に追加の説明）
+// ============================================================
+
+// スタンドアローンモード（既にホーム画面から起動中）の判定
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+}
+
+// バナーの初期表示判定
+function initInstallBanner() {
+  if (isStandaloneMode()) return; // 既にインストール済みなら非表示
+  const dismissed = localStorage.getItem('nomi_install_dismissed');
+  if (dismissed) return;
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'block';
+}
+
+// バナーを閉じる（今後表示しない）
+function dismissInstallBanner() {
+  const banner = document.getElementById('install-banner');
+  if (banner) {
+    banner.style.animation = 'none';
+    banner.style.opacity = '0';
+    banner.style.transition = 'opacity 0.25s';
+    setTimeout(() => { banner.style.display = 'none'; }, 260);
+  }
+  localStorage.setItem('nomi_install_dismissed', '1');
+}
+
+// モーダルを開く
+function showInstallModal() {
+  const modal = document.getElementById('install-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // プラットフォーム自動判定
+  const isIOS     = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /Android/.test(navigator.userAgent);
+  if (isAndroid) {
+    switchPlatformTab('android');
+  } else {
+    switchPlatformTab('ios'); // iOS またはその他は iOS タブをデフォルト表示
+  }
+}
+
+// モーダルを閉じる
+function closeInstallModal() {
+  const modal = document.getElementById('install-modal');
+  if (!modal) return;
+  const sheet = modal.querySelector('.modal-sheet');
+  if (sheet) {
+    sheet.style.animation = 'none';
+    sheet.style.transform = 'translateY(60px)';
+    sheet.style.opacity   = '0';
+    sheet.style.transition = 'transform 0.25s ease, opacity 0.25s';
+  }
+  setTimeout(() => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    if (sheet) {
+      sheet.style.transform = '';
+      sheet.style.opacity   = '';
+      sheet.style.transition = '';
+    }
+  }, 260);
+}
+
+// オーバーレイ（背景）タップで閉じる
+function handleModalOverlayClick(event) {
+  if (event.target === event.currentTarget) closeInstallModal();
+}
+
+// プラットフォームタブ切り替え
+function switchPlatformTab(platform) {
+  const iosBtn     = document.getElementById('tab-ios');
+  const androidBtn = document.getElementById('tab-android');
+  const iosCont    = document.getElementById('platform-ios');
+  const androidCont= document.getElementById('platform-android');
+  if (!iosBtn) return;
+
+  if (platform === 'ios') {
+    iosBtn.classList.add('active');
+    androidBtn.classList.remove('active');
+    iosCont.style.display     = 'block';
+    androidCont.style.display = 'none';
+  } else {
+    androidBtn.classList.add('active');
+    iosBtn.classList.remove('active');
+    androidCont.style.display = 'block';
+    iosCont.style.display     = 'none';
+  }
+}
+

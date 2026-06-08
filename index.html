@@ -19,6 +19,19 @@
   <!-- ========== PAGE: 今日 ========== -->
   <div id="page-home" class="page active">
 
+    <!-- Install banner (初回訪問時に表示) -->
+    <div id="install-banner" class="install-banner" style="display:none">
+      <div class="install-banner-inner">
+        <span class="install-banner-icon">📱</span>
+        <div class="install-banner-text">
+          <strong>ホーム画面に追加</strong>
+          <span>アプリのように使えます</span>
+        </div>
+        <button class="install-banner-btn" onclick="showInstallModal()">方法を見る</button>
+        <button class="install-banner-close" onclick="dismissInstallBanner()" aria-label="閉じる">✕</button>
+      </div>
+    </div>
+
     <!-- Profile bar -->
     <div class="card" id="profile-bar">
       <div id="no-profile">
@@ -381,12 +394,194 @@
       </div>
     </div>
 
+    <!-- ホーム画面追加ガイド -->
+    <div class="section-label" style="margin-top:8px">ホーム画面に追加</div>
+    <div class="card install-guide-card" onclick="showInstallModal()">
+      <div class="install-guide-row">
+        <div class="install-guide-icons">
+          <span>🍎</span><span>🤖</span>
+        </div>
+        <div class="install-guide-text">
+          <div class="install-guide-title">スマホのホーム画面に追加</div>
+          <div class="install-guide-sub">アプリとして快適に使えます</div>
+        </div>
+        <span class="install-guide-arrow">›</span>
+      </div>
+    </div>
+
   </div><!-- /page-profile -->
 
 </div><!-- /wrapper -->
 
 <!-- Toast -->
 <div id="toast" class="toast"></div>
+
+<!-- ========== INSTALL MODAL ========== -->
+<div id="install-modal" class="modal-overlay" style="display:none" onclick="handleModalOverlayClick(event)">
+  <div class="modal-sheet">
+    <!-- Handle bar -->
+    <div class="modal-handle"></div>
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-title">📱 ホーム画面に追加する方法</div>
+      <button class="modal-close" onclick="closeInstallModal()">✕</button>
+    </div>
+
+    <!-- Platform tabs -->
+    <div class="platform-tabs">
+      <button class="platform-tab active" id="tab-ios" onclick="switchPlatformTab('ios')">
+        🍎 iPhone / iPad
+      </button>
+      <button class="platform-tab" id="tab-android" onclick="switchPlatformTab('android')">
+        🤖 Android
+      </button>
+    </div>
+
+    <!-- iOS instructions -->
+    <div id="platform-ios" class="platform-content">
+      <div class="install-note">
+        <span class="install-note-icon">⚠️</span>
+        <span><strong>Safari</strong> で開いている必要があります<br>Chromeなど他のブラウザでは追加できません</span>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Safari でこのページを開く</div>
+            <div class="step-desc">現在 Safari を使っていない場合は、URLをコピーして Safari で開き直してください。</div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">共有ボタンをタップ</div>
+            <div class="step-desc">画面下部（または上部）にある共有アイコンをタップします。</div>
+            <div class="step-visual ios-share-icon">
+              <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <rect width="28" height="28" rx="6" fill="#007AFF"/>
+                  <path d="M14 4 L14 18 M9 9 L14 4 L19 9" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="7" y="14" width="14" height="10" rx="2" stroke="white" stroke-width="2" fill="none"/>
+                </svg>
+                <span>共有</span>
+              </div>
+              <span class="icon-note">← このアイコン</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">「ホーム画面に追加」をタップ</div>
+            <div class="step-desc">共有メニューをスクロールして「ホーム画面に追加」を選択します。</div>
+            <div class="step-visual">
+              <div class="menu-item-preview">
+                <span class="menu-item-icon">➕</span>
+                <span class="menu-item-label">ホーム画面に追加</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">「追加」をタップして完了</div>
+            <div class="step-desc">右上の「追加」ボタンをタップするとホーム画面にアイコンが追加されます。次回からはホーム画面のアイコンからアクセスできます。</div>
+            <div class="step-tag success">✅ これで完了！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Android instructions -->
+    <div id="platform-android" class="platform-content" style="display:none">
+      <div class="install-note">
+        <span class="install-note-icon">💡</span>
+        <span><strong>Chrome</strong> での操作手順です<br>他のブラウザでも同様の手順で追加できます</span>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Chrome でこのページを開く</div>
+            <div class="step-desc">Android では Chrome での操作が最も簡単です。他のブラウザでも手順はほぼ同じです。</div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">右上のメニューをタップ</div>
+            <div class="step-desc">画面右上の「⋮」（縦3点リーダー）アイコンをタップします。</div>
+            <div class="step-visual">
+              <div class="icon-box android-menu">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <rect width="28" height="28" rx="6" fill="#4285F4"/>
+                  <circle cx="14" cy="7" r="2.5" fill="white"/>
+                  <circle cx="14" cy="14" r="2.5" fill="white"/>
+                  <circle cx="14" cy="21" r="2.5" fill="white"/>
+                </svg>
+                <span>メニュー</span>
+              </div>
+              <span class="icon-note">← このアイコン</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">「ホーム画面に追加」をタップ</div>
+            <div class="step-desc">メニューの中から「ホーム画面に追加」または「アプリをインストール」を選択します。</div>
+            <div class="step-visual">
+              <div class="menu-item-preview">
+                <span class="menu-item-icon">📲</span>
+                <span class="menu-item-label">ホーム画面に追加</span>
+              </div>
+              <div style="text-align:center;font-size:0.65rem;color:var(--muted);margin-top:6px">または「アプリをインストール」</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">「追加」をタップして完了</div>
+            <div class="step-desc">確認ダイアログで「追加」をタップするとホーム画面にアイコンが追加されます。</div>
+            <div class="step-tag success">✅ これで完了！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer tip -->
+    <div class="modal-tip">
+      💡 ホーム画面から開くと全画面表示でアプリのように使えます
+    </div>
+
+    <button class="btn-primary" onclick="closeInstallModal()" style="margin-top:4px">
+      閉じる
+    </button>
+  </div>
+</div>
 
 <!-- Tab bar (4 tabs) -->
 <div class="tab-bar">
