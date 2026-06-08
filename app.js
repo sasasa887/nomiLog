@@ -144,72 +144,158 @@ const calcGram    = (ml,pct) => Math.round(ml*(pct/100)*0.8*10)/10;
 const calcKcalAlc = (ml,pct) => Math.round(ml*(pct/100)*0.8*7.1);
 
 // ============================================================
-//  PROFILE
+//  PROFILE  (view / edit モード管理)
 // ============================================================
+// state.profileEditing : true = 編集フォーム表示, false = 確定ビュー表示
+state.profileEditing = !state.profile; // プロフィール未設定なら最初からフォームを開く
+
+// ── モード切り替え ─────────────────────────────────────────
+function showProfileViewMode() {
+  document.getElementById('profile-view-section').style.display = 'block';
+  document.getElementById('profile-edit-section').style.display = 'none';
+  state.profileEditing = false;
+}
+
+function showProfileEditMode(isEditing) {
+  document.getElementById('profile-view-section').style.display = 'none';
+  document.getElementById('profile-edit-section').style.display = 'block';
+  // 編集モードと初回入力でヘッダー表示を切り替え
+  document.getElementById('profile-edit-header').style.display = isEditing ? 'block' : 'none';
+  document.getElementById('profile-edit-label').textContent = isEditing ? 'プロフィールを編集' : 'プロフィール設定';
+  state.profileEditing = true;
+}
+
+// 「✏️ 編集する」ボタン押下
+function startProfileEdit() {
+  const p = state.profile;
+  if (p) {
+    document.getElementById('p-name').value   = p.name;
+    document.getElementById('p-gender').value = p.gender;
+    document.getElementById('p-age').value    = p.age;
+    document.getElementById('p-height').value = p.height;
+    document.getElementById('p-weight').value = p.weight;
+    renderWidmark();
+  }
+  showProfileEditMode(true);
+}
+
+// 「✕ キャンセル」ボタン押下（変更を破棄して確定ビューに戻る）
+function cancelProfileEdit() {
+  showProfileViewMode();
+  showToast('編集をキャンセルしました');
+}
+
+// ── 保存（確定） ────────────────────────────────────────────
 function saveProfile() {
-  const name  =document.getElementById('p-name').value.trim();
-  const gender=document.getElementById('p-gender').value;
-  const age   =parseInt(document.getElementById('p-age').value)||0;
-  const height=parseFloat(document.getElementById('p-height').value)||0;
-  const weight=parseFloat(document.getElementById('p-weight').value)||0;
-  if(!name)   { showToast('⚠️ お名前を入力してください'); return; }
-  if(age<20)  { showToast('⚠️ 20歳未満の方はご利用になれません'); return; }
-  state.profile={name,gender,age,height,weight};
-  localStorage.setItem('nomi_profile',JSON.stringify(state.profile));
-  renderProfile(); renderGauge(); renderCharacter();
-  showToast('✅ プロフィールを保存しました');
-  document.getElementById('btn-clear-profile').style.display='block';
-  switchTab('home');
+  const name   = document.getElementById('p-name').value.trim();
+  const gender = document.getElementById('p-gender').value;
+  const age    = parseInt(document.getElementById('p-age').value)    || 0;
+  const height = parseFloat(document.getElementById('p-height').value) || 0;
+  const weight = parseFloat(document.getElementById('p-weight').value) || 0;
+
+  if (!name)   { showToast('⚠️ お名前を入力してください'); return; }
+  if (age < 20){ showToast('⚠️ 20歳未満の方はご利用になれません'); return; }
+
+  const isNew = !state.profile;
+  state.profile = { name, gender, age, height, weight };
+  localStorage.setItem('nomi_profile', JSON.stringify(state.profile));
+
+  renderProfileView();   // 確定ビューを更新
+  renderHomeProfileBar(); // ホームのプロフィールバーを更新
+  renderGauge();
+  renderCharacter();
+
+  showToast(isNew ? '✅ プロフィールを設定しました！' : '✅ プロフィールを更新しました');
+  showProfileViewMode(); // フォームを隠してビューモードへ
 }
+
+// ── 削除 ────────────────────────────────────────────────────
 function clearProfile() {
-  if(!confirm('プロフィールを削除しますか？')) return;
-  state.profile=null;
+  if (!confirm('プロフィールを削除しますか？')) return;
+  state.profile = null;
   localStorage.removeItem('nomi_profile');
-  document.getElementById('btn-clear-profile').style.display='none';
-  ['p-name','p-age','p-height','p-weight'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('p-gender').value='male';
-  document.getElementById('widmark-preview').style.display='none';
-  renderProfile(); renderGauge(); renderCharacter();
+  ['p-name','p-age','p-height','p-weight'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('p-gender').value = 'male';
+  document.getElementById('widmark-preview').style.display = 'none';
+
+  renderHomeProfileBar();
+  renderGauge();
+  renderCharacter();
   showToast('🗑 プロフィールを削除しました');
+  showProfileEditMode(false); // 初回入力フォームを表示
 }
-function renderProfile() {
-  const p=state.profile;
-  if(!p) {
-    document.getElementById('no-profile').style.display='block';
-    document.getElementById('has-profile').style.display='none';
-    document.getElementById('btn-clear-profile').style.display='none';
+
+// ── ビューの描画 ─────────────────────────────────────────────
+function renderProfileView() {
+  const p = state.profile;
+  if (!p) return;
+
+  const isFemale = p.gender === 'female';
+  const limit    = isFemale ? 10 : 20;
+
+  document.getElementById('pv-avatar').textContent = isFemale ? '👩' : '👨';
+  document.getElementById('pv-name').textContent   = p.name;
+  document.getElementById('pv-sub').textContent    = `${isFemale ? '女性' : '男性'}`;
+
+  document.getElementById('pv-weight').innerHTML = `${p.weight}<small>kg</small>`;
+  document.getElementById('pv-height').innerHTML = `${p.height}<small>cm</small>`;
+  document.getElementById('pv-age').innerHTML    = `${p.age}<small>歳</small>`;
+  document.getElementById('pv-limit').innerHTML  = `${limit}<small>g</small>`;
+
+  // Widmark
+  if (p.weight && p.age) {
+    const r   = isFemale ? 0.55 : 0.68;
+    const bac = ((limit / (p.weight * r)) * 100).toFixed(3);
+    document.getElementById('pv-widmark').style.display = 'block';
+    document.getElementById('pv-widmark-text').innerHTML =
+      `適量(${limit}g)摂取時の推定血中アルコール濃度: <strong style="color:var(--amber-light)">${bac}%</strong><br>一般的に0.05%以上で酔いを感じ始めます`;
+  }
+}
+
+// ホームのプロフィールバーを更新（以前の renderProfile を分離）
+function renderHomeProfileBar() {
+  const p = state.profile;
+  if (!p) {
+    document.getElementById('no-profile').style.display  = 'block';
+    document.getElementById('has-profile').style.display = 'none';
     return;
   }
-  document.getElementById('no-profile').style.display='none';
-  document.getElementById('has-profile').style.display='block';
-  document.getElementById('btn-clear-profile').style.display='block';
-  document.getElementById('display-name').textContent=p.name;
-  document.getElementById('display-meta').textContent=
-    `${p.gender==='female'?'女性':'男性'} · ${p.age}歳 · ${p.height}cm · ${p.weight}kg`;
-  document.getElementById('avatar-emoji').textContent=p.gender==='female'?'👩':'👨';
-  document.getElementById('p-name').value  =p.name;
-  document.getElementById('p-gender').value=p.gender;
-  document.getElementById('p-age').value   =p.age;
-  document.getElementById('p-height').value=p.height;
-  document.getElementById('p-weight').value=p.weight;
-  renderWidmark();
+  document.getElementById('no-profile').style.display  = 'none';
+  document.getElementById('has-profile').style.display = 'block';
+  document.getElementById('display-name').textContent  = p.name;
+  document.getElementById('display-meta').textContent  =
+    `${p.gender === 'female' ? '女性' : '男性'} · ${p.age}歳 · ${p.height}cm · ${p.weight}kg`;
+  document.getElementById('avatar-emoji').textContent  = p.gender === 'female' ? '👩' : '👨';
 }
+
+// ページ切り替え時にプロフィールタブの表示状態を整える
+function syncProfileTab() {
+  if (state.profile && !state.profileEditing) {
+    showProfileViewMode();
+  } else {
+    showProfileEditMode(!!state.profile);
+  }
+}
+
+// ── Widmark（編集フォーム用） ──────────────────────────────
 function renderWidmark() {
-  const g=document.getElementById('p-gender').value;
-  const w=document.getElementById('p-weight').value;
-  const a=document.getElementById('p-age').value;
-  if(!a||!w) return;
-  const r=g==='female'?0.55:0.68;
-  const lim=g==='female'?10:20;
-  const bac=((lim/(parseFloat(w)*r))*100).toFixed(3);
-  document.getElementById('widmark-preview').style.display='block';
-  document.getElementById('widmark-text').innerHTML=
+  const g = document.getElementById('p-gender').value;
+  const w = document.getElementById('p-weight').value;
+  const a = document.getElementById('p-age').value;
+  if (!a || !w) return;
+  const r   = g === 'female' ? 0.55 : 0.68;
+  const lim = g === 'female' ? 10   : 20;
+  const bac = ((lim / (parseFloat(w) * r)) * 100).toFixed(3);
+  document.getElementById('widmark-preview').style.display = 'block';
+  document.getElementById('widmark-text').innerHTML =
     `適量(${lim}g)摂取時の推定血中アルコール濃度: <strong style="color:var(--amber-light)">${bac}%</strong><br>
      一般的に0.05%以上で酔いを感じ始めます`;
 }
-['p-gender','p-age','p-weight'].forEach(id=>{
-  document.getElementById(id)?.addEventListener('change',renderWidmark);
-  document.getElementById(id)?.addEventListener('input', renderWidmark);
+['p-gender','p-age','p-weight'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', renderWidmark);
+  document.getElementById(id)?.addEventListener('input',  renderWidmark);
 });
 
 // ============================================================
@@ -751,14 +837,17 @@ function switchTab(tab) {
     document.getElementById(`page-${t}`).classList.toggle('active',t===tab);
     document.getElementById(`tab-${t}`)?.classList.toggle('active',t===tab);
   });
-  if(tab==='history'){ renderCalendar(); renderPeriodStats(); }
+  if(tab==='history') { renderCalendar(); renderPeriodStats(); }
+  if(tab==='profile') { syncProfileTab(); }
 }
 
 // ============================================================
 //  INIT
 // ============================================================
 loadState();
-renderProfile();
+renderHomeProfileBar();
+renderProfileView();
+syncProfileTab();
 renderGauge();
 renderLog();
 renderCharacter();

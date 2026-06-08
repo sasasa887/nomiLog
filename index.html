@@ -196,7 +196,7 @@
       <div class="date-sel-row">
         <span class="date-sel-label">🗓 追加する日付</span>
         <input type="date" id="add-date" class="date-input" onchange="onAddDateChange()">
-        <!-- <button class="btn-today" onclick="setAddDateToday()">今日</button> -->
+        <button class="btn-today" onclick="setAddDateToday()">今日</button>
       </div>
       <div class="date-sel-note" id="date-sel-note">今日に追加します</div>
     </div>
@@ -275,52 +275,112 @@
 
   <!-- ========== PAGE: プロフィール ========== -->
   <div id="page-profile" class="page">
-    <div class="section-label">プロフィール設定</div>
-    <div class="card">
-      <div class="profile-grid">
-        <div class="form-group full">
-          <label>お名前</label>
-          <input type="text" id="p-name" placeholder="山田 太郎">
+
+    <!-- ── 確定ビュー（プロフィール保存済み・編集モードでない） ── -->
+    <div id="profile-view-section" style="display:none">
+      <div class="section-label">プロフィール</div>
+      <div class="card profile-view-card">
+        <!-- Avatar + name -->
+        <div class="pv-top">
+          <div class="pv-avatar" id="pv-avatar">🧑</div>
+          <div class="pv-name" id="pv-name">—</div>
+          <div class="pv-sub" id="pv-sub">—</div>
         </div>
-        <div class="form-group">
-          <label>性別</label>
-          <select id="p-gender">
-            <option value="male">男性</option>
-            <option value="female">女性</option>
-          </select>
+        <!-- Stats grid -->
+        <div class="pv-stats">
+          <div class="pv-stat-item">
+            <span class="pv-stat-icon">⚖️</span>
+            <span class="pv-stat-val" id="pv-weight">—<small>kg</small></span>
+            <span class="pv-stat-label">体重</span>
+          </div>
+          <div class="pv-stat-item">
+            <span class="pv-stat-icon">📏</span>
+            <span class="pv-stat-val" id="pv-height">—<small>cm</small></span>
+            <span class="pv-stat-label">身長</span>
+          </div>
+          <div class="pv-stat-item">
+            <span class="pv-stat-icon">🎂</span>
+            <span class="pv-stat-val" id="pv-age">—<small>歳</small></span>
+            <span class="pv-stat-label">年齢</span>
+          </div>
+          <div class="pv-stat-item">
+            <span class="pv-stat-icon">🍶</span>
+            <span class="pv-stat-val" id="pv-limit">—<small>g</small></span>
+            <span class="pv-stat-label">1日の適量</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label>年齢</label>
-          <input type="number" id="p-age" placeholder="30" min="20" max="100">
+        <!-- Widmark result in view mode -->
+        <div id="pv-widmark" class="info-strip" style="display:none">
+          <div>📊 <strong>Widmark式による参考値</strong></div>
+          <div id="pv-widmark-text" style="margin-top:4px"></div>
         </div>
-        <div class="form-group">
-          <label>身長 (cm)</label>
-          <input type="number" id="p-height" placeholder="170">
-        </div>
-        <div class="form-group">
-          <label>体重 (kg)</label>
-          <input type="number" id="p-weight" placeholder="65">
+        <!-- Action buttons -->
+        <button class="btn-primary" onclick="startProfileEdit()" style="margin-top:14px">
+          ✏️ 編集する
+        </button>
+        <button class="btn-danger" onclick="clearProfile()" style="margin-top:8px">
+          🗑 プロフィールを削除
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">適量・カロリーの目安について</div>
+        <div class="info-text">
+          <p>厚生労働省「健康日本21」では、1日の純アルコール量の目安を<strong>男性20g、女性10g</strong>としています。</p>
+          <p>アルコールは1g約7.1kcal。ビール350mlで約140kcal、日本酒1合で約185kcalになります。</p>
+          <p>飲酒カロリーは通常の食事カロリーに<strong class="text-pink">上乗せ</strong>されるため、ダイエット中は特に注意です。</p>
+          <p class="text-red">⚠️ 未成年の飲酒は法律で禁止されています。</p>
         </div>
       </div>
-      <div id="widmark-preview" class="info-strip" style="margin-top:14px;display:none">
-        <div>📊 <strong>Widmark式による参考値</strong></div>
-        <div id="widmark-text" style="margin-top:4px"></div>
-      </div>
-      <button class="btn-primary" onclick="saveProfile()">保存する</button>
-      <button class="btn-danger" id="btn-clear-profile" onclick="clearProfile()" style="display:none">
-        🗑 プロフィールを削除
-      </button>
     </div>
 
-    <div class="card">
-      <div class="card-title">適量・カロリーの目安について</div>
-      <div class="info-text">
-        <p>厚生労働省「健康日本21」では、1日の純アルコール量の目安を<strong>男性20g、女性10g</strong>としています。</p>
-        <p>アルコールは1g約7.1kcal。ビール350mlで約140kcal、日本酒1合で約185kcalになります。</p>
-        <p>飲酒カロリーは通常の食事カロリーに<strong class="text-pink">上乗せ</strong>されるため、ダイエット中は特に注意です。</p>
-        <p class="text-red">⚠️ 未成年の飲酒は法律で禁止されています。</p>
+    <!-- ── 入力フォーム（初回 or 編集モード） ── -->
+    <div id="profile-edit-section">
+      <div class="section-label" id="profile-edit-label">プロフィール設定</div>
+      <div class="card">
+        <!-- 編集モード時のヘッダー -->
+        <div id="profile-edit-header" style="display:none">
+          <div class="edit-mode-banner">
+            <span>✏️ 編集モード</span>
+            <button class="btn-edit-cancel" onclick="cancelProfileEdit()">✕ キャンセル</button>
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group full">
+            <label>お名前</label>
+            <input type="text" id="p-name" placeholder="山田 太郎">
+          </div>
+          <div class="form-group">
+            <label>性別</label>
+            <select id="p-gender">
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>年齢</label>
+            <input type="number" id="p-age" placeholder="30" min="20" max="100">
+          </div>
+          <div class="form-group">
+            <label>身長 (cm)</label>
+            <input type="number" id="p-height" placeholder="170">
+          </div>
+          <div class="form-group">
+            <label>体重 (kg)</label>
+            <input type="number" id="p-weight" placeholder="65">
+          </div>
+        </div>
+        <div id="widmark-preview" class="info-strip" style="margin-top:14px;display:none">
+          <div>📊 <strong>Widmark式による参考値</strong></div>
+          <div id="widmark-text" style="margin-top:4px"></div>
+        </div>
+        <button class="btn-primary" onclick="saveProfile()" id="btn-save-profile">
+          ✅ 確定する
+        </button>
       </div>
     </div>
+
   </div><!-- /page-profile -->
 
 </div><!-- /wrapper -->
