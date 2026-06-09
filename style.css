@@ -340,27 +340,43 @@ header .tagline {
 .tag.alc { background:rgba(240,165,0,0.15);    color:var(--amber); }
 .tag.cal { background:rgba(224,107,160,0.15);  color:var(--pink); }
 
-/* My template card with edit/delete buttons */
-.my-drink-wrap { position:relative; }
+/* My template card with edit/delete buttons in a shared container */
+.my-drink-wrap {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+/* the drink button inside the wrap loses its own border/bg/radius */
+.my-drink-wrap .my-drink-btn {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  flex: 1;
+}
 .my-drink-actions {
-  position:absolute; top:6px; right:6px;
-  display:flex; gap:4px;
+  display: flex;
+  border-top: 1px solid var(--border);
 }
 .my-drink-actions button {
-  background:rgba(13,15,20,0.7);
-  border:1px solid var(--border);
-  color:var(--muted);
-  border-radius:6px;
-  padding:2px 6px;
-  font-size:0.6rem;
-  cursor:pointer;
-  font-family:'Noto Sans JP',sans-serif;
-  transition:color 0.15s, border-color 0.15s;
-  z-index:2;
-  position:relative;
+  flex: 1;
+  background: var(--bg);
+  border: none;
+  color: var(--muted);
+  padding: 8px 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: color 0.15s, background 0.15s;
 }
-.my-drink-actions .btn-edit-tpl:hover  { color:var(--amber); border-color:var(--amber); }
-.my-drink-actions .btn-del-tpl:hover   { color:var(--red);   border-color:var(--red); }
+.my-drink-actions .btn-edit-tpl {
+  border-right: 1px solid var(--border);
+}
+.my-drink-actions .btn-edit-tpl:hover { color: var(--amber); background: var(--amber-glow); }
+.my-drink-actions .btn-del-tpl:hover  { color: var(--red);   background: rgba(224,82,82,0.1); }
 
 .btn-add-template {
   display:block; width:100%;
@@ -581,6 +597,8 @@ header .tagline {
 .cal-day.today   { border-color:var(--amber) !important; }
 .cal-day.selected { border-color:var(--blue) !important; background:rgba(91,156,246,0.12) !important; }
 .cal-day.empty   { cursor:default; pointer-events:none; }
+.cal-day.future  { opacity:0.28; cursor:default; pointer-events:none; }
+.cal-day.future:hover { border-color:transparent; }
 .cal-day-num {
   font-size:0.72rem; font-weight:700; line-height:1;
   color:var(--text);
@@ -625,13 +643,7 @@ header .tagline {
 .legend-dot.risk-5 { background:var(--risk-5-fg); }
 
 /* Day detail panel */
-.day-detail-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.btn-add-to-day {
-  background:var(--amber-glow); border:1px solid rgba(240,165,0,0.3);
-  color:var(--amber); border-radius:8px; padding:6px 12px;
-  font-size:0.72rem; font-weight:700;
-  cursor:pointer; font-family:'Noto Sans JP',sans-serif;
-}
+.day-detail-header { display:flex; align-items:center; margin-bottom:12px; }
 
 /* ---------- Toast ---------- */
 .toast {
@@ -669,6 +681,170 @@ header .tagline {
 /* ---------- Pages ---------- */
 .page        { display:none; }
 .page.active { display:block; }
+
+/* ---------- Resource Impact (翌日のリソース消費) ---------- */
+.resource-lead {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.resource-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.resource-item:last-child { margin-bottom: 0; }
+
+.resource-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.resource-icon {
+  font-size: 1.5rem;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.resource-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  flex: 1;
+}
+.resource-name small { font-size: 0.62rem; color: var(--muted); font-weight: 400; display: block; margin-top: 1px; }
+.resource-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
+}
+.resource-value small { font-size: 0.62rem; font-weight: 400; color: var(--muted); }
+
+.resource-bar-track {
+  height: 7px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 7px;
+}
+.resource-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(0.34,1.4,0.64,1);
+}
+
+.resource-desc {
+  font-size: 0.68rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.resource-desc strong { color: var(--amber-light); }
+
+/* severity color variants */
+.res-weight  .resource-icon { background: rgba(91,156,246,0.15); }
+.res-muscle  .resource-icon { background: rgba(224,107,160,0.15); }
+.res-skin    .resource-icon { background: rgba(240,165,0,0.15); }
+
+.res-level-0 .resource-value { color: var(--green); }
+.res-level-1 .resource-value { color: var(--amber); }
+.res-level-2 .resource-value { color: #e07532; }
+.res-level-3 .resource-value { color: var(--red); }
+
+.res-level-0 .resource-bar-fill { background: var(--green); }
+.res-level-1 .resource-bar-fill { background: var(--amber); }
+.res-level-2 .resource-bar-fill { background: #e07532; }
+.res-level-3 .resource-bar-fill { background: var(--red); }
+
+/* no-alcohol positive state */
+.resource-clean {
+  text-align: center;
+  padding: 18px 12px;
+  background: rgba(78,202,139,0.06);
+  border: 1px solid rgba(78,202,139,0.2);
+  border-radius: 12px;
+}
+.resource-clean-emoji { font-size: 2rem; margin-bottom: 6px; }
+.resource-clean-title { font-size: 0.95rem; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+.resource-clean-sub   { font-size: 0.72rem; color: var(--muted); margin-bottom: 12px; }
+.resource-clean-list  { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.resource-clean-chip  {
+  font-size: 0.68rem;
+  color: var(--green);
+  background: rgba(78,202,139,0.1);
+  border: 1px solid rgba(78,202,139,0.2);
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+/* ---------- Money Visualization (お金の可視化) ---------- */
+.money-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr;
+  gap: 8px;
+}
+.money-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.money-label {
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.money-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+  word-break: keep-all;
+}
+.money-value--main { color: var(--amber); font-size: 1.25rem; }
+.money-value--year { color: var(--red); }
+
+.money-equiv { margin-top: 10px; }
+.money-equiv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(224,82,82,0.06);
+  border: 1px solid rgba(224,82,82,0.15);
+  border-radius: 10px;
+  padding: 9px 13px;
+}
+.money-equiv-label { font-size: 0.7rem; color: var(--muted); }
+.money-equiv-chip {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--red);
+  white-space: nowrap;
+}
+.money-zero {
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(78,202,139,0.07);
+  border: 1px solid rgba(78,202,139,0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* price tag on drink cards & log items */
+.tag.yen { background: rgba(255,209,102,0.12); color: var(--amber-light); }
+.log-item .li-price { font-size:0.66rem; color: var(--amber-light); font-weight:700; }
 
 /* ---------- Install Banner ---------- */
 .install-banner {
@@ -919,6 +1095,87 @@ header .tagline {
   margin: 16px 0 12px;
   line-height: 1.6;
 }
+
+/* ---------- Confirm (Delete) Modal ---------- */
+.confirm-sheet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 340px;
+  margin: auto 16px;
+  padding: 24px 20px 20px;
+  text-align: center;
+  animation: popIn 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes popIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.confirm-icon {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+}
+.confirm-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.confirm-target {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--amber);
+  background: var(--amber-glow);
+  border: 1px solid rgba(240,165,0,0.25);
+  border-radius: 10px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  max-width: 100%;
+  word-break: break-word;
+}
+.confirm-message {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+.confirm-btn-cancel {
+  flex: 1;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 12px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: border-color 0.2s;
+}
+.confirm-btn-cancel:hover { border-color: var(--muted); }
+.confirm-btn-delete {
+  flex: 1;
+  background: var(--red);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: opacity 0.2s;
+}
+.confirm-btn-delete:active { transform: scale(0.97); }
+
+/* center confirm overlay vertically (overrides flex-end for this modal) */
+#confirm-modal, #reset-modal { align-items: center; }
 
 /* ---------- Profile View Mode ---------- */
 .profile-view-card { text-align:center; }

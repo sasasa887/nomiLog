@@ -109,6 +109,39 @@
       <div class="water-tip">💧 お酒1杯ごとに水を1杯飲むと◎</div>
     </div>
 
+    <!-- 翌日リソース消費カード -->
+    <div class="card">
+      <div class="card-title">明日のあなたへの影響</div>
+      <div class="resource-lead" id="resource-lead">今夜の飲酒が、明日のあなたのリソースをどれだけ消費するか</div>
+      <div id="resource-impact"></div>
+      <div class="info-strip" style="margin-top:12px">
+        ⚠️ これは飲酒量から算出した<strong>目安の参考値</strong>です。実際の影響には個人差があります。
+      </div>
+    </div>
+
+    <!-- お金の可視化カード -->
+    <div class="card">
+      <div class="card-title">お酒に使ったお金</div>
+      <div class="money-grid">
+        <div class="money-item">
+          <span class="money-label">今日</span>
+          <span class="money-value" id="money-today">¥0</span>
+        </div>
+        <div class="money-item">
+          <span class="money-label">今月</span>
+          <span class="money-value money-value--main" id="money-month">¥0</span>
+        </div>
+        <div class="money-item">
+          <span class="money-label">年間ペース</span>
+          <span class="money-value money-value--year" id="money-year">¥0</span>
+        </div>
+      </div>
+      <div class="money-equiv" id="money-equiv"></div>
+      <div class="info-strip" style="margin-top:10px" id="money-note">
+        💡 金額はテンプレートの価格設定から計算した目安です
+      </div>
+    </div>
+
     <!-- Health Character card -->
     <div class="card">
       <div class="card-title">あなたの健康キャラクター</div>
@@ -195,7 +228,6 @@
     <div class="card" id="day-detail" style="display:none">
       <div class="day-detail-header">
         <span class="card-title" id="day-detail-title">—</span>
-        <button class="btn-add-to-day" onclick="goAddForSelectedDay()">＋ 追加</button>
       </div>
       <div id="day-detail-log" class="log-list"></div>
     </div>
@@ -256,6 +288,10 @@
           <label>kcal (任意)</label>
           <input type="number" id="tpl-kcal" placeholder="自動計算">
         </div>
+        <div class="form-group">
+          <label>価格 ¥ (任意)</label>
+          <input type="number" id="tpl-price" placeholder="300" min="0">
+        </div>
       </div>
       <div class="custom-preview" id="tpl-preview"></div>
       <div style="display:flex;gap:10px">
@@ -279,6 +315,10 @@
         <div class="form-group">
           <label>名前</label>
           <input type="text" id="custom-name" placeholder="お酒名">
+        </div>
+        <div class="form-group">
+          <label>価格 ¥ (任意)</label>
+          <input type="number" id="custom-price" placeholder="300" min="0">
         </div>
       </div>
       <div class="custom-preview" id="custom-preview"></div>
@@ -580,6 +620,34 @@
     <button class="btn-primary" onclick="closeInstallModal()" style="margin-top:4px">
       閉じる
     </button>
+  </div>
+</div>
+
+<!-- ========== DELETE CONFIRM MODAL ========== -->
+<div id="confirm-modal" class="modal-overlay" style="display:none" onclick="handleConfirmOverlayClick(event)">
+  <div class="confirm-sheet">
+    <div class="confirm-icon">🗑</div>
+    <div class="confirm-title">テンプレートを削除</div>
+    <div class="confirm-target" id="confirm-target">—</div>
+    <div class="confirm-message">このマイテンプレートを削除しますか？<br>この操作は取り消せません。</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="closeConfirmModal()">キャンセル</button>
+      <button class="confirm-btn-delete" onclick="confirmDeleteTemplate()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== RESET LOG CONFIRM MODAL ========== -->
+<div id="reset-modal" class="modal-overlay" style="display:none" onclick="handleResetOverlayClick(event)">
+  <div class="confirm-sheet">
+    <div class="confirm-icon">🗑</div>
+    <div class="confirm-title">今日のログをリセット</div>
+    <div class="confirm-target" id="reset-target">—</div>
+    <div class="confirm-message">今日の飲酒記録をすべて削除します。<br>この操作は取り消せません。</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="closeResetModal()">キャンセル</button>
+      <button class="confirm-btn-delete" onclick="confirmResetLog()">リセットする</button>
+    </div>
   </div>
 </div>
 

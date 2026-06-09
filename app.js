@@ -6,15 +6,16 @@
 //  CONSTANTS
 // ============================================================
 const BUILT_IN_DRINKS = [
-  { id:'beer350',  icon:'🍺', name:'ビール',     sub:'350ml · 5%',           ml:350, pct:5,   kcal:140 },
-  { id:'beer500',  icon:'🍺', name:'ビール大',    sub:'500ml · 5%',           ml:500, pct:5,   kcal:200 },
-  { id:'sake',     icon:'🍶', name:'日本酒',      sub:'1合 180ml · 15%',      ml:180, pct:15,  kcal:185 },
-  { id:'wine',     icon:'🍷', name:'ワイン',      sub:'グラス 120ml · 12%',   ml:120, pct:12,  kcal:88  },
-  { id:'chuhai',   icon:'🥤', name:'チューハイ',  sub:'350ml · 5%',           ml:350, pct:5,   kcal:158 },
-  { id:'highball', icon:'🥃', name:'ハイボール',  sub:'350ml · 7%',           ml:350, pct:7,   kcal:175 },
-  { id:'shochu',   icon:'🫗', name:'焼酎',        sub:'1杯 90ml · 25%',       ml:90,  pct:25,  kcal:131 },
-  { id:'whisky',   icon:'🥃', name:'ウイスキー',  sub:'シングル 30ml · 40%',  ml:30,  pct:40,  kcal:71  },
+  { id:'beer350',  icon:'🍺', name:'ビール',       sub:'350ml · 5%',           ml:350, pct:5,   kcal:140, price:230 },
+  { id:'beer500',  icon:'🍺', name:'ビール大',      sub:'500ml · 5%',           ml:500, pct:5,   kcal:200, price:310 },
+  { id:'sake',     icon:'🍶', name:'日本酒',        sub:'1合 180ml · 15%',      ml:180, pct:15,  kcal:185, price:300 },
+  { id:'wine',     icon:'🍷', name:'ワイン',        sub:'グラス 120ml · 12%',   ml:120, pct:12,  kcal:88,  price:400 },
+  { id:'lemonsour',icon:'🍋', name:'レモンサワー',  sub:'350ml · 5%',           ml:350, pct:5,   kcal:165, price:170 },
+  { id:'cassis',   icon:'🍷', name:'カシスオレンジ',sub:'180ml · 8%',           ml:180, pct:8,   kcal:165, price:450 },
+  { id:'highball', icon:'🥃', name:'ハイボール',    sub:'350ml · 7%',           ml:350, pct:7,   kcal:175, price:190 },
+  { id:'whisky',   icon:'🥃', name:'ウイスキー',    sub:'シングル 30ml · 40%',  ml:30,  pct:40,  kcal:71,  price:250 },
 ];
+
 
 const BENEFITS = [
   { days:3,  icon:'😴', name:'睡眠改善',     desc:'睡眠の質が向上' },
@@ -50,6 +51,7 @@ const state = {
   calMonth:      null,       // Date obj – 1st of displayed month
   selectedCalDay:null,       // dateKey of selected calendar day
   periodView:    '1m',
+  pendingDeleteId: null,     // 削除確認中のテンプレートID
 };
 
 // ============================================================
@@ -83,6 +85,9 @@ function getDayTotal(key) {
 }
 function getDayKcal(key) {
   return getLogForKey(key).reduce((s,i)=>s+i.kcal,0);
+}
+function getDayPrice(key) {
+  return getLogForKey(key).reduce((s,i)=>s+(i.price||0),0);
 }
 
 // Get all date keys that have log data (scan last N days + month range)
@@ -335,6 +340,12 @@ function renderGauge() {
   document.getElementById('total-kcal').innerHTML=`${totalKcal}<span>kcal</span>`;
   document.getElementById('kcal-fill').style.width=Math.min((totalKcal/400)*100,100)+'%';
 
+  // 翌日リソース消費を更新
+  renderResourceImpact(totalGram);
+
+  // お金の可視化を更新
+  renderMoney();
+
   const eq=document.getElementById('kcal-equiv');
   if(totalKcal===0){ eq.innerHTML=''; return; }
   eq.innerHTML=`
@@ -342,6 +353,146 @@ function renderGauge() {
     <div class="kcal-chip">🏃 ジョギング ${Math.round(totalKcal/7)} 分</div>
     <div class="kcal-chip">🚶 ウォーク ${Math.round(totalKcal/4)} 分</div>
   `;
+}
+
+// ============================================================
+//  RESOURCE IMPACT (翌日のリソース消費に変換)
+// ============================================================
+function renderResourceImpact(totalGram) {
+  const el = document.getElementById('resource-impact');
+  const lead = document.getElementById('resource-lead');
+  if (!el) return;
+
+  // ── 飲んでいない場合：ポジティブ表示 ──
+  if (totalGram <= 0) {
+    if (lead) lead.style.display = 'none';
+    el.innerHTML = `
+      <div class="resource-clean">
+        <div class="resource-clean-emoji">🌅</div>
+        <div class="resource-clean-title">今日はノーアルコール！</div>
+        <div class="resource-clean-sub">明日のあなたのリソースは満タンです</div>
+        <div class="resource-clean-list">
+          <span class="resource-clean-chip">💧 体重 むくみなし</span>
+          <span class="resource-clean-chip">💪 筋肉 回復力フル</span>
+          <span class="resource-clean-chip">✨ 肌 絶好調</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (lead) lead.style.display = 'block';
+
+  const g = totalGram;
+  const weightKg = state.profile && state.profile.weight ? state.profile.weight : 60;
+
+  // ── ① 体重（むくみ・水分貯留） ──
+  // 翌朝のむくみ・水分貯留の目安（kg）
+  const bloatKg = Math.round(g * 0.02 * 100) / 100;
+  const waterCups = Math.ceil(g / 10); // 対策に必要な水分（コップ杯）
+  const bloatPct = Math.min((bloatKg / 1.0) * 100, 100); // 1.0kgで100%
+
+  // ── ② 筋肉（タンパク質合成・回復力） ──
+  // 体格を考慮した筋肉回復力の低下率
+  const muscleRaw = (g / weightKg) * 28; // 体重比でMPS低下を近似
+  const musclePct = Math.min(Math.round(muscleRaw), 45);
+  const workoutsLost = Math.max(1, Math.round(g / 12)); // 無駄になる筋トレ換算
+  const muscleBar = Math.min((musclePct / 45) * 100, 100);
+
+  // ── ③ 肌（水分・ハリ・コンディション） ──
+  const skinPct = Math.min(Math.round(g * 1.0), 50);
+  const skinAgeEquiv = Math.round(g * 0.04 * 10) / 10; // 一時的な肌年齢への影響（歳相当）
+  const skinBar = Math.min((skinPct / 50) * 100, 100);
+
+  // 重症度レベル判定（0:軽 〜 3:重）
+  const sevLevel = (ratio) => ratio < 0.25 ? 0 : ratio < 0.5 ? 1 : ratio < 0.75 ? 2 : 3;
+  const wLv = sevLevel(bloatPct / 100);
+  const mLv = sevLevel(muscleBar / 100);
+  const sLv = sevLevel(skinBar / 100);
+
+  el.innerHTML = `
+    <!-- 体重 -->
+    <div class="resource-item res-weight res-level-${wLv}">
+      <div class="resource-head">
+        <span class="resource-icon">💧</span>
+        <span class="resource-name">体重<small>翌朝のむくみ・水分貯留</small></span>
+        <span class="resource-value">+${bloatKg}<small>kg</small></span>
+      </div>
+      <div class="resource-bar-track"><div class="resource-bar-fill" style="width:${bloatPct}%"></div></div>
+      <div class="resource-desc">アルコールの利尿作用で脱水→反動でむくみが発生。<strong>水コップ${waterCups}杯</strong>の補給で軽減できます。</div>
+    </div>
+
+    <!-- 筋肉 -->
+    <div class="resource-item res-muscle res-level-${mLv}">
+      <div class="resource-head">
+        <span class="resource-icon">💪</span>
+        <span class="resource-name">筋肉<small>タンパク質合成・回復力</small></span>
+        <span class="resource-value">-${musclePct}<small>%</small></span>
+      </div>
+      <div class="resource-bar-track"><div class="resource-bar-fill" style="width:${muscleBar}%"></div></div>
+      <div class="resource-desc">飲酒は筋タンパク質の合成を抑制します。今夜のトレ効果は <strong>筋トレ${workoutsLost}セット分</strong>が目減りする計算です。</div>
+    </div>
+
+    <!-- 肌 -->
+    <div class="resource-item res-skin res-level-${sLv}">
+      <div class="resource-head">
+        <span class="resource-icon">✨</span>
+        <span class="resource-name">肌<small>水分・ハリ・コンディション</small></span>
+        <span class="resource-value">-${skinPct}<small>%</small></span>
+      </div>
+      <div class="resource-bar-track"><div class="resource-bar-fill" style="width:${skinBar}%"></div></div>
+      <div class="resource-desc">脱水と睡眠の質低下でハリ・水分がダウン。明日の肌は <strong>一時的に約+${skinAgeEquiv}歳</strong>の見た目に。</div>
+    </div>`;
+}
+
+// ============================================================
+//  MONEY (お金の可視化)
+// ============================================================
+function renderMoney() {
+  const todayEl = document.getElementById('money-today');
+  if (!todayEl) return;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const mon  = now.getMonth();
+  const elapsedDays = now.getDate(); // 今月の経過日数
+
+  // 今日の金額
+  const todayPrice = getDayPrice(todayKey());
+
+  // 今月の合計金額
+  let monthPrice = 0;
+  for (let d = 1; d <= elapsedDays; d++) {
+    monthPrice += getDayPrice(`${year}-${mon+1}-${d}`);
+  }
+
+  // 年間ペース（今月の日割り平均 × 365）
+  const yearPace = elapsedDays > 0 ? Math.round((monthPrice / elapsedDays) * 365) : 0;
+
+  todayEl.textContent = `¥${todayPrice.toLocaleString()}`;
+  document.getElementById('money-month').textContent = `¥${monthPrice.toLocaleString()}`;
+  document.getElementById('money-year').textContent  = `¥${yearPace.toLocaleString()}`;
+
+  // 年間ペースを「何が買えるか」に換算（削減モチベの演出）
+  const equivEl = document.getElementById('money-equiv');
+  if (monthPrice === 0) {
+    equivEl.innerHTML = `<div class="money-zero">🎉 今月はまだ ¥0！この調子で節約できています</div>`;
+    return;
+  }
+  const equivs = [];
+  if (yearPace >= 200000) equivs.push('✈️ 海外旅行 1回分');
+  else if (yearPace >= 100000) equivs.push('🏝 国内旅行 2回分');
+  else if (yearPace >= 50000)  equivs.push('🎮 ゲーム機 1台分');
+  else if (yearPace >= 20000)  equivs.push('👟 スニーカー 1足分');
+  else if (yearPace >= 10000)  equivs.push('🍽 ちょっと贅沢なディナー分');
+  if (yearPace > 0) {
+    equivEl.innerHTML = `
+      <div class="money-equiv-row">
+        <span class="money-equiv-label">年間ペースで換算すると…</span>
+        <span class="money-equiv-chip">${equivs[0] || '☕ コーヒー' + Math.round(yearPace/500) + '杯分'}</span>
+      </div>`;
+  } else {
+    equivEl.innerHTML = '';
+  }
 }
 
 // ============================================================
@@ -370,6 +521,7 @@ function renderLogForKey(key, listId, resetBtnId, allowDelete) {
         <div class="li-meta-row">
           <span class="li-gram">🍶 ${item.gram}g</span>
           <span class="li-kcal">🔥 ${item.kcal}kcal</span>
+          ${item.price?`<span class="li-price">💰 ¥${item.price}</span>`:''}
           <span class="li-time">${item.time}</span>
         </div>
       </div>
@@ -382,14 +534,16 @@ function addDrink(drink, targetKey) {
   const key = targetKey || state.addDate || todayKey();
   const gram=calcGram(drink.ml,drink.pct);
   const kcal=drink.kcal!==undefined?drink.kcal:calcKcalAlc(drink.ml,drink.pct);
+  const price=drink.price!==undefined?drink.price:0;
   const now=new Date();
   const time=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
   const log=getLogForKey(key);
-  log.unshift({icon:drink.icon,name:drink.name,detail:drink.sub,gram,kcal,time});
+  log.unshift({icon:drink.icon,name:drink.name,detail:drink.sub,gram,kcal,price,time});
   saveLogForKey(key,log);
 
   const isToday=(key===todayKey());
   if(isToday){ renderGauge(); renderLog(); renderCharacter(); }
+  else { renderMoney(); } // 過去日追加でも今月金額を更新
   renderCalendar();
   if(state.selectedCalDay===key) renderDayDetail(key);
   showToast(`${drink.icon} ${drink.name} を追加（${isToday?'今日':formatDateJP(key)}）`);
@@ -400,11 +554,13 @@ function addCustom() {
   const ml =parseFloat(document.getElementById('custom-ml').value);
   const pct=parseFloat(document.getElementById('custom-pct').value);
   const name=document.getElementById('custom-name').value.trim()||'カスタム';
+  const price=parseInt(document.getElementById('custom-price').value)||0;
   if(!ml||!pct){ showToast('⚠️ 量と度数を入力してください'); return; }
-  addDrink({icon:'🥂',name,sub:`${ml}ml · ${pct}%`,ml,pct});
+  addDrink({icon:'🥂',name,sub:`${ml}ml · ${pct}%`,ml,pct,price});
   document.getElementById('custom-ml').value='';
   document.getElementById('custom-pct').value='';
   document.getElementById('custom-name').value='';
+  document.getElementById('custom-price').value='';
   document.getElementById('custom-preview').innerHTML='';
 }
 
@@ -414,15 +570,39 @@ function removeLogItem(key, i) {
   saveLogForKey(key,log);
   const isToday=(key===todayKey());
   if(isToday){ renderGauge(); renderLog(); renderCharacter(); }
+  else { renderMoney(); } // 過去日削除でも今月金額を更新
   renderCalendar();
   if(state.selectedCalDay===key) renderDayDetail(key);
+  renderPeriodStats();
   showToast(`🗑 ${removed.name} を削除しました`);
 }
 
+// リセット確認モーダルを開く
 function resetLog() {
-  if(!confirm('今日の記録をリセットしますか？')) return;
-  saveLogForKey(todayKey(),[]);
+  const todayTotal = getDayTotal(todayKey());
+  const count = getLogForKey(todayKey()).length;
+  if (count === 0) { showToast('記録がありません'); return; }
+  document.getElementById('reset-target').textContent =
+    `${count}件の記録（${Math.round(todayTotal*10)/10}g）`;
+  const modal = document.getElementById('reset-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeResetModal() {
+  document.getElementById('reset-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function handleResetOverlayClick(event) {
+  if (event.target === event.currentTarget) closeResetModal();
+}
+function confirmResetLog() {
+  const tk = todayKey();
+  saveLogForKey(tk, []);
   renderGauge(); renderLog(); renderCharacter(); renderCalendar();
+  // 履歴の日別詳細パネルが今日を表示中なら更新（古いログが残るのを防ぐ）
+  if (state.selectedCalDay === tk) renderDayDetail(tk);
+  renderPeriodStats();
+  closeResetModal();
   showToast('🗑 今日のログをリセットしました');
 }
 
@@ -440,6 +620,7 @@ function renderDrinksGrid() {
         <div class="drink-tags">
           <span class="tag alc">🍶 ${g}g</span>
           <span class="tag cal">🔥 ${d.kcal}kcal</span>
+          ${d.price?`<span class="tag yen">💰 ¥${d.price}</span>`:''}
         </div>
       </button>`;
   }).join('');
@@ -459,18 +640,19 @@ function renderMyDrinksGrid() {
     const g=calcGram(d.ml,d.pct);
     return `
       <div class="my-drink-wrap">
-        <button class="drink-btn" onclick='addDrink(${JSON.stringify(d)})'>
+        <button class="drink-btn my-drink-btn" onclick='addDrink(${JSON.stringify(d)})'>
           <span class="drink-icon">${d.icon}</span>
           <span class="drink-name">${d.name}</span>
           <span class="drink-detail">${d.sub}</span>
           <div class="drink-tags">
             <span class="tag alc">🍶 ${g}g</span>
             <span class="tag cal">🔥 ${d.kcal}kcal</span>
+            ${d.price?`<span class="tag yen">💰 ¥${d.price}</span>`:''}
           </div>
         </button>
         <div class="my-drink-actions">
-          <button class="btn-edit-tpl" onclick="showTemplateForm('${d.id}');event.stopPropagation()">編集</button>
-          <button class="btn-del-tpl"  onclick="deleteTemplate('${d.id}');event.stopPropagation()">削除</button>
+          <button class="btn-edit-tpl" onclick="showTemplateForm('${d.id}')">✏️ 編集</button>
+          <button class="btn-del-tpl"  onclick="deleteTemplate('${d.id}')">🗑 削除</button>
         </div>
       </div>`;
   }).join('');
@@ -489,6 +671,7 @@ function showTemplateForm(editId) {
       document.getElementById('tpl-ml').value=d.ml;
       document.getElementById('tpl-pct').value=d.pct;
       document.getElementById('tpl-kcal').value=d.kcal||'';
+      document.getElementById('tpl-price').value=d.price||'';
     }
   } else {
     document.getElementById('tpl-name').value='';
@@ -496,6 +679,7 @@ function showTemplateForm(editId) {
     document.getElementById('tpl-ml').value='';
     document.getElementById('tpl-pct').value='';
     document.getElementById('tpl-kcal').value='';
+    document.getElementById('tpl-price').value='';
   }
   updateTplPreview();
   form.scrollIntoView({behavior:'smooth',block:'center'});
@@ -511,28 +695,54 @@ function saveTemplate() {
   const pct =parseFloat(document.getElementById('tpl-pct').value);
   const kcalInput=document.getElementById('tpl-kcal').value;
   const kcal=kcalInput?parseInt(kcalInput):calcKcalAlc(ml,pct);
+  const price=parseInt(document.getElementById('tpl-price').value)||0;
   if(!name||!ml||!pct){ showToast('⚠️ 名前・量・度数は必須です'); return; }
   const sub=`${ml}ml · ${pct}%`;
   const editId=document.getElementById('tpl-edit-id').value;
   if(editId){
     const idx=state.customDrinks.findIndex(x=>x.id===editId);
-    if(idx>=0) state.customDrinks[idx]={id:editId,icon,name,sub,ml,pct,kcal};
+    if(idx>=0) state.customDrinks[idx]={id:editId,icon,name,sub,ml,pct,kcal,price};
     showToast('✏️ テンプレートを更新しました');
   } else {
     const id='custom_'+Date.now();
-    state.customDrinks.push({id,icon,name,sub,ml,pct,kcal});
+    state.customDrinks.push({id,icon,name,sub,ml,pct,kcal,price});
     showToast('✅ テンプレートを保存しました');
   }
   saveCustomDrinks();
   hideTemplateForm();
   renderMyDrinksGrid();
 }
+// 削除確認モーダルを開く（削除対象を保持）
 function deleteTemplate(id) {
-  if(!confirm('このテンプレートを削除しますか？')) return;
-  state.customDrinks=state.customDrinks.filter(d=>d.id!==id);
+  const tpl = state.customDrinks.find(d => d.id === id);
+  if (!tpl) return;
+  state.pendingDeleteId = id;
+  document.getElementById('confirm-target').textContent = `${tpl.icon} ${tpl.name}`;
+  const modal = document.getElementById('confirm-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+// モーダルを閉じる
+function closeConfirmModal() {
+  const modal = document.getElementById('confirm-modal');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+  state.pendingDeleteId = null;
+}
+// 背景タップで閉じる
+function handleConfirmOverlayClick(event) {
+  if (event.target === event.currentTarget) closeConfirmModal();
+}
+// 実際に削除を実行
+function confirmDeleteTemplate() {
+  const id = state.pendingDeleteId;
+  if (!id) { closeConfirmModal(); return; }
+  const tpl = state.customDrinks.find(d => d.id === id);
+  state.customDrinks = state.customDrinks.filter(d => d.id !== id);
   saveCustomDrinks();
   renderMyDrinksGrid();
-  showToast('🗑 テンプレートを削除しました');
+  closeConfirmModal();
+  showToast(`🗑 ${tpl ? tpl.name : 'テンプレート'} を削除しました`);
 }
 function updateTplPreview() {
   const ml =parseFloat(document.getElementById('tpl-ml').value);
@@ -547,11 +757,20 @@ function updateTplPreview() {
 // ============================================================
 //  ADD DATE SELECTOR
 // ============================================================
+// ローカルタイムの YYYY-MM-DD 文字列（input[type=date]用）
+function toLocalDateInput(d) {
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 function initAddDate() {
   const input=document.getElementById('add-date');
   const today=new Date();
-  input.value=today.toISOString().slice(0,10);
-  input.max=today.toISOString().slice(0,10);
+  const todayInput=toLocalDateInput(today);
+  input.value=todayInput;
+  input.max=todayInput; // 未来日を選択不可に
   state.addDate=todayKey();
   updateDateSelNote();
 }
@@ -559,14 +778,26 @@ function onAddDateChange() {
   const val=document.getElementById('add-date').value;
   if(!val) return;
   const d=new Date(val+'T00:00:00');
+  // 未来日が入力されたら今日に戻す（トーストは未来日警告のみ）
+  const todayMidnight=new Date(); todayMidnight.setHours(0,0,0,0);
+  if(d>todayMidnight){
+    resetAddDateToToday();          // 日付だけ静かに今日へ戻す
+    showToast('⚠️ 未来の日付は選択できません');
+    return;
+  }
   state.addDate=dateToKey(d);
   updateDateSelNote();
 }
-function setAddDateToday() {
+// 日付を今日に戻す（トーストなし・内部用）
+function resetAddDateToToday() {
   const today=new Date();
-  document.getElementById('add-date').value=today.toISOString().slice(0,10);
+  document.getElementById('add-date').value=toLocalDateInput(today);
   state.addDate=todayKey();
   updateDateSelNote();
+}
+function setAddDateToday() {
+  resetAddDateToToday();
+  showToast('📅 今日の日付にしました');
 }
 function updateDateSelNote() {
   const el=document.getElementById('date-sel-note');
@@ -598,6 +829,10 @@ function renderCalendar() {
   const daysInMonth=new Date(year,mon+1,0).getDate();
   const todayStr=todayKey();
 
+  // 今日の0時（未来判定用）
+  const todayMidnight=new Date();
+  todayMidnight.setHours(0,0,0,0);
+
   let html='';
   // Empty cells before month start
   for(let i=0;i<firstDay;i++) html+='<div class="cal-day empty"></div>';
@@ -613,10 +848,11 @@ function renderCalendar() {
     const dow=dateObj.getDay();
     const dowClass=dow===0?'sun':dow===6?'sat':'';
     const gramLabel=gram>0?`${Math.round(gram)}g`:'';
+    const isFuture=dateObj>todayMidnight; // 未来日は選択不可
 
     html+=`
-      <div class="cal-day ${riskClass} ${isToday} ${isSel} ${dowClass}"
-           onclick="selectCalDay('${key}')">
+      <div class="cal-day ${riskClass} ${isToday} ${isSel} ${dowClass} ${isFuture?'future':''}"
+           ${isFuture?'':`onclick="selectCalDay('${key}')"`}>
         <span class="cal-day-num">${d}</span>
         <span class="cal-day-dot"></span>
         <span class="cal-day-gram">${gramLabel}</span>
@@ -638,6 +874,12 @@ function nextMonth() {
   renderCalendar();
 }
 function selectCalDay(key) {
+  // 未来日は選択不可
+  const d=keyToDate(key);
+  const todayMidnight=new Date();
+  todayMidnight.setHours(0,0,0,0);
+  if(d>todayMidnight) return;
+
   state.selectedCalDay=state.selectedCalDay===key?null:key;
   renderCalendar();
   if(state.selectedCalDay) renderDayDetail(state.selectedCalDay);
@@ -649,15 +891,6 @@ function renderDayDetail(key) {
   document.getElementById('day-detail-title').textContent=formatDateJP(key);
   renderLogForKey(key,'day-detail-log',null,true);
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-function goAddForSelectedDay() {
-  if(!state.selectedCalDay) return;
-  // Set the add tab date to selected day
-  const d=keyToDate(state.selectedCalDay);
-  document.getElementById('add-date').value=d.toISOString().slice(0,10);
-  state.addDate=state.selectedCalDay;
-  updateDateSelNote();
-  switchTab('add');
 }
 
 // ============================================================
@@ -677,13 +910,14 @@ function renderPeriodStats() {
   const keys=getKeysInRange(start,end);
   const limit=getLimit();
 
-  let totalGram=0,totalKcal=0,drinkingDays=0;
+  let totalGram=0,totalKcal=0,totalPrice=0,drinkingDays=0;
   const riskCounts=[0,0,0,0,0,0]; // index 0-5
 
   keys.forEach(k=>{
     const g=getDayTotal(k);
     const kc=getDayKcal(k);
-    if(g>0){ drinkingDays++; totalGram+=g; totalKcal+=kc; }
+    const pr=getDayPrice(k);
+    if(g>0){ drinkingDays++; totalGram+=g; totalKcal+=kc; totalPrice+=pr; }
     riskCounts[getRiskLevel(g)]++;
   });
 
@@ -741,8 +975,16 @@ function renderPeriodStats() {
         <div class="ps-label">総カロリー</div>
       </div>
       <div class="ps-item">
+        <div class="ps-val" style="color:var(--amber-light)">¥${totalPrice.toLocaleString()}</div>
+        <div class="ps-label">総支出</div>
+      </div>
+      <div class="ps-item">
         <div class="ps-val" style="color:${overDays>0?'var(--red)':'var(--green)'}">${overDays}<small>日</small></div>
         <div class="ps-label">超過日数</div>
+      </div>
+      <div class="ps-item">
+        <div class="ps-val" style="color:var(--green)">${safeDays}<small>日</small></div>
+        <div class="ps-label">適量内日数</div>
       </div>
     </div>
     <div class="card-title" style="margin-bottom:8px">危険度の分布（${totalDays}日間）</div>
