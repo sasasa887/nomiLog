@@ -152,6 +152,9 @@ function loadState() {
   state.addDate=todayKey();
   const now=new Date(); now.setDate(1);
   state.calMonth=now;
+  // プロフィール読み込み後に編集モードの初期値を決定
+  // （設定済みなら確定ビュー、未設定なら入力フォーム）
+  state.profileEditing = !state.profile;
 }
 function saveCustomDrinks() {
   localStorage.setItem('nomi_custom_drinks',JSON.stringify(state.customDrinks));
@@ -194,7 +197,8 @@ const calcKcalAlc = (ml,pct) => Math.round(ml*(pct/100)*0.8*7.1);
 //  PROFILE  (view / edit モード管理)
 // ============================================================
 // state.profileEditing : true = 編集フォーム表示, false = 確定ビュー表示
-state.profileEditing = !state.profile; // プロフィール未設定なら最初からフォームを開く
+// 実際の初期値は loadState() 内でプロフィール読み込み後に決定される
+state.profileEditing = false;
 
 // ── モード切り替え ─────────────────────────────────────────
 function showProfileViewMode() {
