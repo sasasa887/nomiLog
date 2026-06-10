@@ -785,7 +785,7 @@ header .tagline {
 /* ---------- Money Visualization (お金の可視化) ---------- */
 .money-grid {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1.2fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 .money-item {
@@ -804,14 +804,15 @@ header .tagline {
   letter-spacing: 0.05em;
 }
 .money-value {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.1;
   word-break: keep-all;
 }
-.money-value--main { color: var(--amber); font-size: 1.25rem; }
-.money-value--year { color: var(--red); }
+.money-value--main  { color: var(--amber); }
+.money-value--total { color: var(--amber-light); font-size: 1.25rem; }
+.money-value--year  { color: var(--red); }
 
 .money-equiv { margin-top: 10px; }
 .money-equiv-row {

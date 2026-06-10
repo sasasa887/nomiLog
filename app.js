@@ -90,6 +90,32 @@ function getDayPrice(key) {
   return getLogForKey(key).reduce((s,i)=>s+(i.price||0),0);
 }
 
+// 全履歴を集計（localStorageの全ログキーをスキャン）
+function getAllHistoryStats() {
+  let totalPrice=0, totalGram=0, totalKcal=0, recordDays=0;
+  let firstDate=null;
+  for (let i=0; i<localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith('nomi_log_')) continue;
+    let log;
+    try { log = JSON.parse(localStorage.getItem(k)); } catch(e) { continue; }
+    if (!Array.isArray(log) || log.length===0) continue;
+
+    recordDays++;
+    log.forEach(item => {
+      totalPrice += (item.price||0);
+      totalGram  += (item.gram ||0);
+      totalKcal  += (item.kcal ||0);
+    });
+
+    // 最初の記録日を特定
+    const dateKey = k.replace('nomi_log_','');
+    const d = keyToDate(dateKey);
+    if (!firstDate || d < firstDate) firstDate = d;
+  }
+  return { totalPrice, totalGram, totalKcal, recordDays, firstDate };
+}
+
 // Get all date keys that have log data (scan last N days + month range)
 function getKeysInRange(startDate, endDate) {
   const keys=[]; const cur=new Date(startDate);
@@ -445,7 +471,7 @@ function renderResourceImpact(totalGram) {
 }
 
 // ============================================================
-//  MONEY (お金の可視化)
+//  MONEY (お金の可視化) — 全履歴から集計
 // ============================================================
 function renderMoney() {
   const todayEl = document.getElementById('money-today');
@@ -454,45 +480,57 @@ function renderMoney() {
   const now = new Date();
   const year = now.getFullYear();
   const mon  = now.getMonth();
-  const elapsedDays = now.getDate(); // 今月の経過日数
 
   // 今日の金額
   const todayPrice = getDayPrice(todayKey());
 
   // 今月の合計金額
   let monthPrice = 0;
-  for (let d = 1; d <= elapsedDays; d++) {
+  for (let d = 1; d <= now.getDate(); d++) {
     monthPrice += getDayPrice(`${year}-${mon+1}-${d}`);
   }
 
-  // 年間ペース（今月の日割り平均 × 365）
-  const yearPace = elapsedDays > 0 ? Math.round((monthPrice / elapsedDays) * 365) : 0;
+  // 全履歴の集計
+  const hist = getAllHistoryStats();
+  const totalPrice = hist.totalPrice;
+
+  // 年間ペース：最初の記録日〜今日の経過日数で日割り × 365
+  let yearPace = 0;
+  if (hist.firstDate && totalPrice > 0) {
+    const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+    const elapsedDays = Math.max(1, Math.round((todayMid - hist.firstDate) / 86400000) + 1);
+    yearPace = Math.round((totalPrice / elapsedDays) * 365);
+  }
 
   todayEl.textContent = `¥${todayPrice.toLocaleString()}`;
   document.getElementById('money-month').textContent = `¥${monthPrice.toLocaleString()}`;
+  document.getElementById('money-total').textContent = `¥${totalPrice.toLocaleString()}`;
   document.getElementById('money-year').textContent  = `¥${yearPace.toLocaleString()}`;
 
-  // 年間ペースを「何が買えるか」に換算（削減モチベの演出）
+  // 累計額を「何が買えるか」に換算（削減モチベの演出）
   const equivEl = document.getElementById('money-equiv');
-  if (monthPrice === 0) {
-    equivEl.innerHTML = `<div class="money-zero">🎉 今月はまだ ¥0！この調子で節約できています</div>`;
+  if (totalPrice === 0) {
+    equivEl.innerHTML = `<div class="money-zero">🎉 記録上の支出はまだ ¥0！この調子で節約できています</div>`;
     return;
   }
-  const equivs = [];
-  if (yearPace >= 200000) equivs.push('✈️ 海外旅行 1回分');
-  else if (yearPace >= 100000) equivs.push('🏝 国内旅行 2回分');
-  else if (yearPace >= 50000)  equivs.push('🎮 ゲーム機 1台分');
-  else if (yearPace >= 20000)  equivs.push('👟 スニーカー 1足分');
-  else if (yearPace >= 10000)  equivs.push('🍽 ちょっと贅沢なディナー分');
-  if (yearPace > 0) {
-    equivEl.innerHTML = `
-      <div class="money-equiv-row">
-        <span class="money-equiv-label">年間ペースで換算すると…</span>
-        <span class="money-equiv-chip">${equivs[0] || '☕ コーヒー' + Math.round(yearPace/500) + '杯分'}</span>
-      </div>`;
-  } else {
-    equivEl.innerHTML = '';
-  }
+  const pickEquiv = (v) => {
+    if (v >= 200000) return '✈️ 海外旅行 1回分';
+    if (v >= 100000) return '🏝 国内旅行 2回分';
+    if (v >= 50000)  return '🎮 ゲーム機 1台分';
+    if (v >= 20000)  return '👟 スニーカー 1足分';
+    if (v >= 10000)  return '🍽 贅沢ディナー 1回分';
+    if (v >= 3000)   return '📚 本 ' + Math.floor(v/1500) + '冊分';
+    return '☕ コーヒー ' + Math.max(1, Math.round(v/500)) + '杯分';
+  };
+  equivEl.innerHTML = `
+    <div class="money-equiv-row">
+      <span class="money-equiv-label">これまでの合計で換算すると…</span>
+      <span class="money-equiv-chip">${pickEquiv(totalPrice)}</span>
+    </div>
+    <div class="money-equiv-row" style="margin-top:6px">
+      <span class="money-equiv-label">年間ペースで換算すると…</span>
+      <span class="money-equiv-chip">${pickEquiv(yearPace)}</span>
+    </div>`;
 }
 
 // ============================================================
