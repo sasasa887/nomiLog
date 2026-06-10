@@ -252,8 +252,9 @@ function saveProfile() {
   renderGauge();
   renderCharacter();
 
-  showToast(isNew ? '✅ プロフィールを設定しました！' : '✅ プロフィールを更新しました');
   showProfileViewMode(); // フォームを隠してビューモードへ
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // 確定ビューを確実に表示
+  showToast(isNew ? '✅ プロフィールを設定しました！' : '✅ プロフィールを更新しました');
 }
 
 // ── 削除 ────────────────────────────────────────────────────
@@ -530,13 +531,13 @@ function renderMoney() {
     return;
   }
   const pickEquiv = (v) => {
-    if (v >= 200000) return '✈️ 海外旅行 1回分';
-    if (v >= 100000) return '🏝 国内旅行 2回分';
-    if (v >= 50000)  return '🎮 ゲーム機 1台分';
-    if (v >= 20000)  return '👟 スニーカー 1足分';
-    if (v >= 10000)  return '🍽 贅沢ディナー 1回分';
-    if (v >= 3000)   return '📚 本 ' + Math.floor(v/1500) + '冊分';
-    return '☕ コーヒー ' + Math.max(1, Math.round(v/500)) + '杯分';
+    if (v >= 700000) return `🏠 家賃 ${Math.floor(v/70000)}ヶ月分（月7万換算）`;
+    if (v >= 70000)  return `🏠 ひと月の家賃 約${(v/70000).toFixed(1)}回分`;
+    if (v >= 30000)  return `📱 スマホ代 ${Math.floor(v/8000)}ヶ月分`;
+    if (v >= 10000)  return `🛒 1週間の食費 約${(v/10000).toFixed(1)}回分`;
+    if (v >= 3000)   return `🍱 お昼ごはん ${Math.floor(v/700)}回分`;
+    if (v >= 1000)   return `🍙 コンビニ弁当 ${Math.floor(v/600)}個分`;
+    return `☕ コーヒー ${Math.max(1, Math.round(v/500))}杯分`;
   };
   equivEl.innerHTML = `
     <div class="money-equiv-row">
