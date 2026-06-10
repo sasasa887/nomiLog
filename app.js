@@ -86,8 +86,24 @@ function getDayTotal(key) {
 function getDayKcal(key) {
   return getLogForKey(key).reduce((s,i)=>s+i.kcal,0);
 }
+// price が無い過去ログにテンプレート価格を逆算で補完する
+function resolveItemPrice(item) {
+  // 既に price があればそれを使う
+  if (typeof item.price === 'number' && item.price > 0) return item.price;
+  // 定番テンプレートから名前一致で価格を引く
+  const builtin = BUILT_IN_DRINKS.find(d => d.name === item.name);
+  if (builtin && builtin.price) return builtin.price;
+  // マイテンプレートから名前一致で引く
+  const custom = state.customDrinks.find(d => d.name === item.name);
+  if (custom && custom.price) return custom.price;
+  // detail（"350ml · 5%"）一致でも試す
+  const byDetail = BUILT_IN_DRINKS.find(d => d.sub === item.detail);
+  if (byDetail && byDetail.price) return byDetail.price;
+  return 0;
+}
+
 function getDayPrice(key) {
-  return getLogForKey(key).reduce((s,i)=>s+(i.price||0),0);
+  return getLogForKey(key).reduce((s,i)=>s+resolveItemPrice(i),0);
 }
 
 // 全履歴を集計（localStorageの全ログキーをスキャン）
@@ -103,7 +119,7 @@ function getAllHistoryStats() {
 
     recordDays++;
     log.forEach(item => {
-      totalPrice += (item.price||0);
+      totalPrice += resolveItemPrice(item);
       totalGram  += (item.gram ||0);
       totalKcal  += (item.kcal ||0);
     });
@@ -550,7 +566,9 @@ function renderLogForKey(key, listId, resetBtnId, allowDelete) {
     return;
   }
   if(resetBtn) resetBtn.style.display='block';
-  listEl.innerHTML=log.map((item,i)=>`
+  listEl.innerHTML=log.map((item,i)=>{
+    const price=resolveItemPrice(item);
+    return `
     <div class="log-item">
       <span class="li-icon">${item.icon}</span>
       <div style="flex:1;min-width:0">
@@ -559,13 +577,13 @@ function renderLogForKey(key, listId, resetBtnId, allowDelete) {
         <div class="li-meta-row">
           <span class="li-gram">🍶 ${item.gram}g</span>
           <span class="li-kcal">🔥 ${item.kcal}kcal</span>
-          ${item.price?`<span class="li-price">💰 ¥${item.price}</span>`:''}
+          ${price?`<span class="li-price">💰 ¥${price}</span>`:''}
           <span class="li-time">${item.time}</span>
         </div>
       </div>
       ${allowDelete?`<button class="li-del" onclick="removeLogItem('${key}',${i})">✕</button>`:''}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function addDrink(drink, targetKey) {
