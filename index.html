@@ -380,15 +380,15 @@
         </button>
       </div>
 
-      <div class="card">
-        <div class="card-title">適量・カロリーの目安について</div>
-        <div class="info-text">
+      <details class="info-accordion">
+        <summary>適量・カロリーの目安について</summary>
+        <div class="info-text" style="margin-top:10px">
           <p>厚生労働省「健康日本21」では、1日の純アルコール量の目安を<strong>男性20g、女性10g</strong>としています。</p>
           <p>アルコールは1g約7.1kcal。ビール350mlで約140kcal、日本酒1合で約185kcalになります。</p>
           <p>飲酒カロリーは通常の食事カロリーに<strong class="text-pink">上乗せ</strong>されるため、ダイエット中は特に注意です。</p>
           <p class="text-red">⚠️ 未成年の飲酒は法律で禁止されています。</p>
         </div>
-      </div>
+      </details>
     </div>
 
     <!-- ── 入力フォーム（初回 or 編集モード） ── -->
@@ -417,15 +417,15 @@
           </div>
           <div class="form-group">
             <label>年齢</label>
-            <input type="number" id="p-age" placeholder="30" min="20" max="100">
+            <input type="number" id="p-age" placeholder="30" min="20">
           </div>
           <div class="form-group">
             <label>身長 (cm)</label>
-            <input type="number" id="p-height" placeholder="170">
+            <input type="number" id="p-height" placeholder="170" min="100" max="250">
           </div>
           <div class="form-group">
             <label>体重 (kg)</label>
-            <input type="number" id="p-weight" placeholder="65">
+            <input type="number" id="p-weight" placeholder="65" min="20" max="200">
           </div>
         </div>
         <div id="widmark-preview" class="info-strip" style="margin-top:14px;display:none">

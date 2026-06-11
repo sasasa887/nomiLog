@@ -1181,27 +1181,27 @@ header .tagline {
 /* ---------- Profile View Mode ---------- */
 .profile-view-card { text-align:center; }
 
-.pv-top { padding:8px 0 20px; }
+.pv-top { padding:4px 0 12px; }
 
 .pv-avatar {
-  font-size:3.5rem;
-  width:80px; height:80px;
+  font-size:2.6rem;
+  width:60px; height:60px;
   border-radius:50%;
   background:var(--amber-glow);
-  border:2.5px solid var(--amber);
+  border:2px solid var(--amber);
   display:flex; align-items:center; justify-content:center;
-  margin:0 auto 12px;
+  margin:0 auto 8px;
 }
 
 .pv-name {
-  font-size:1.4rem;
+  font-size:1.2rem;
   font-weight:700;
   color:var(--text);
-  margin-bottom:4px;
+  margin-bottom:2px;
 }
 
 .pv-sub {
-  font-size:0.72rem;
+  font-size:0.7rem;
   color:var(--muted);
   letter-spacing:0.05em;
 }
@@ -1209,42 +1209,76 @@ header .tagline {
 .pv-stats {
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:10px;
-  margin:18px 0 4px;
+  gap:8px;
+  margin:12px 0 4px;
 }
 
 .pv-stat-item {
   background:var(--bg);
   border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px 10px;
+  border-radius:10px;
+  padding:9px 8px;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:4px;
+  gap:2px;
 }
 
-.pv-stat-icon { font-size:1.3rem; }
+.pv-stat-icon { font-size:1.1rem; }
 
 .pv-stat-val {
-  font-size:1.5rem;
+  font-size:1.25rem;
   font-weight:700;
   color:var(--amber);
   line-height:1.1;
 }
 
 .pv-stat-val small {
-  font-size:0.7rem;
+  font-size:0.66rem;
   font-weight:400;
   color:var(--muted);
   margin-left:2px;
 }
 
 .pv-stat-label {
-  font-size:0.62rem;
+  font-size:0.6rem;
   color:var(--muted);
   letter-spacing:0.05em;
 }
+
+/* 確定ビューのボタンを少しコンパクトに */
+.profile-view-card .btn-primary { padding:11px; margin-top:12px !important; }
+.profile-view-card .btn-danger  { padding:9px; }
+
+/* 折りたたみ式の目安カード */
+.info-accordion {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:0;
+  margin-top:12px;
+  overflow:hidden;
+}
+.info-accordion summary {
+  list-style:none;
+  cursor:pointer;
+  padding:14px 16px;
+  font-size:0.78rem;
+  font-weight:700;
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.info-accordion summary::-webkit-details-marker { display:none; }
+.info-accordion summary::after {
+  content:'▼';
+  font-size:0.6rem;
+  color:var(--muted);
+  transition:transform 0.2s;
+}
+.info-accordion[open] summary::after { transform:rotate(180deg); }
+.info-accordion .info-text { padding:0 16px 16px; }
 
 /* ---------- Profile Edit Mode Banner ---------- */
 .edit-mode-banner {

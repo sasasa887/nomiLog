@@ -245,7 +245,9 @@ function saveProfile() {
   const weight = parseFloat(document.getElementById('p-weight').value) || 0;
 
   if (!name)   { showToast('⚠️ お名前を入力してください'); return; }
-  if (age < 20){ showToast('⚠️ 20歳未満の方はご利用になれません'); return; }
+  if (age < 20) { showToast('⚠️ 20歳以上で入力してください'); return; }
+  if (weight && (weight < 20 || weight > 200)) { showToast('⚠️ 体重は20〜200kgで入力してください'); return; }
+  if (height && (height < 100 || height > 250)) { showToast('⚠️ 身長は100〜250cmで入力してください'); return; }
 
   const isNew = !state.profile;
   state.profile = { name, gender, age, height, weight };
