@@ -52,6 +52,8 @@ const state = {
   selectedCalDay:null,       // dateKey of selected calendar day
   periodView:    '1m',
   pendingDeleteId: null,     // 削除確認中のテンプレートID
+  qtyDrink: null,            // 数量選択中のドリンク
+  usualSet: null,            // いつものセット（直近の組み合わせ）
 };
 
 // ============================================================
@@ -593,15 +595,18 @@ function renderLogForKey(key, listId, resetBtnId, allowDelete) {
   }).join('');
 }
 
-function addDrink(drink, targetKey) {
+function addDrink(drink, targetKey, qty, noSwitch) {
   const key = targetKey || state.addDate || todayKey();
+  const count = qty && qty > 0 ? qty : 1;
   const gram=calcGram(drink.ml,drink.pct);
   const kcal=drink.kcal!==undefined?drink.kcal:calcKcalAlc(drink.ml,drink.pct);
   const price=drink.price!==undefined?drink.price:0;
   const now=new Date();
   const time=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
   const log=getLogForKey(key);
-  log.unshift({icon:drink.icon,name:drink.name,detail:drink.sub,gram,kcal,price,time});
+  for (let n=0; n<count; n++) {
+    log.unshift({icon:drink.icon,name:drink.name,detail:drink.sub,gram,kcal,price,time});
+  }
   saveLogForKey(key,log);
 
   const isToday=(key===todayKey());
@@ -609,7 +614,84 @@ function addDrink(drink, targetKey) {
   else { renderMoney(); } // 過去日追加でも今月金額を更新
   renderCalendar();
   if(state.selectedCalDay===key) renderDayDetail(key);
-  showToast(`${drink.icon} ${drink.name} を追加（${isToday?'今日':formatDateJP(key)}）`);
+  const qtyLabel = count>1 ? ` ×${count}` : '';
+  showToast(`${drink.icon} ${drink.name}${qtyLabel} を追加（${isToday?'今日':formatDateJP(key)}）`);
+  if(!noSwitch) switchTab('home');
+}
+
+// 数量選択シート用：選択中のドリンク
+function openQtySheet(drink) {
+  state.qtyDrink = drink;
+  document.getElementById('qty-drink-name').textContent = `${drink.icon} ${drink.name}`;
+  document.getElementById('qty-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeQtySheet() {
+  document.getElementById('qty-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  state.qtyDrink = null;
+}
+function handleQtyOverlayClick(e) {
+  if (e.target === e.currentTarget) closeQtySheet();
+}
+function addQty(n) {
+  if (!state.qtyDrink) return;
+  const d = state.qtyDrink;
+  closeQtySheet();
+  addDrink(d, null, n);
+}
+
+// ============================================================
+//  USUAL SET（いつものセット復元）
+// ============================================================
+// 直近で記録がある「過去の日」を探してその組み合わせを返す
+function getUsualSet() {
+  const today = todayKey();
+  // 過去90日を新しい順にスキャン（今日は除く）
+  for (let i=1; i<=90; i++) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const key=dateToKey(d);
+    const log=getLogForKey(key);
+    if (log.length>0) {
+      // 名前ごとに集計
+      const counts={};
+      log.forEach(it=>{ counts[it.name]=(counts[it.name]||0)+1; });
+      return { key, log, counts };
+    }
+  }
+  return null;
+}
+
+function renderUsualSet() {
+  const card=document.getElementById('usual-set-card');
+  if(!card) return;
+  const usual=getUsualSet();
+  if(!usual){ card.style.display='none'; return; }
+  // "ビール×3, ハイボール×2" のような表記
+  const parts=Object.entries(usual.counts).map(([name,c])=> c>1?`${name}×${c}`:name);
+  document.getElementById('usual-set-detail').textContent=parts.join('・');
+  state.usualSet=usual;
+  card.style.display='flex';
+}
+
+function addUsualSet() {
+  if(!state.usualSet) return;
+  const key=state.addDate||todayKey();
+  const srcLog=state.usualSet.log;
+  const now=new Date();
+  const time=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const log=getLogForKey(key);
+  // 過去ログの各項目を新しい時刻で複製して追加
+  srcLog.forEach(it=>{
+    log.unshift({icon:it.icon,name:it.name,detail:it.detail,gram:it.gram,kcal:it.kcal,price:it.price||0,time});
+  });
+  saveLogForKey(key,log);
+  const isToday=(key===todayKey());
+  if(isToday){ renderGauge(); renderLog(); renderCharacter(); }
+  else { renderMoney(); }
+  renderCalendar();
+  if(state.selectedCalDay===key) renderDayDetail(key);
+  showToast(`🔁 いつものセット ${srcLog.length}杯を追加`);
   switchTab('home');
 }
 
@@ -672,20 +754,43 @@ function confirmResetLog() {
 // ============================================================
 //  DRINKS GRID (Built-in)
 // ============================================================
+// 全履歴からお酒の名前ごとの出現回数を集計
+function getDrinkFrequency() {
+  const freq = {};
+  for (let i=0; i<localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith('nomi_log_')) continue;
+    let log;
+    try { log = JSON.parse(localStorage.getItem(k)); } catch(e) { continue; }
+    if (!Array.isArray(log)) continue;
+    log.forEach(item => { freq[item.name] = (freq[item.name]||0) + 1; });
+  }
+  return freq;
+}
+
 function renderDrinksGrid() {
-  document.getElementById('drinks-grid').innerHTML=BUILT_IN_DRINKS.map(d=>{
+  const freq = getDrinkFrequency();
+  // よく飲む順にソート（頻度0は元の順序を維持）
+  const sorted = [...BUILT_IN_DRINKS].sort((a,b) => (freq[b.name]||0) - (freq[a.name]||0));
+  document.getElementById('drinks-grid').innerHTML=sorted.map(d=>{
     const g=calcGram(d.ml,d.pct);
+    const count = freq[d.name]||0;
+    const popular = count>0 ? `<span class="freq-badge">${count}回</span>` : '';
     return `
-      <button class="drink-btn" onclick='addDrink(${JSON.stringify(d)})'>
-        <span class="drink-icon">${d.icon}</span>
-        <span class="drink-name">${d.name}</span>
-        <span class="drink-detail">${d.sub}</span>
-        <div class="drink-tags">
-          <span class="tag alc">🍶 ${g}g</span>
-          <span class="tag cal">🔥 ${d.kcal}kcal</span>
-          ${d.price?`<span class="tag yen">💰 ¥${d.price}</span>`:''}
-        </div>
-      </button>`;
+      <div class="drink-wrap">
+        <button class="drink-btn" onclick='addDrink(${JSON.stringify(d)})'>
+          ${popular}
+          <span class="drink-icon">${d.icon}</span>
+          <span class="drink-name">${d.name}</span>
+          <span class="drink-detail">${d.sub}</span>
+          <div class="drink-tags">
+            <span class="tag alc">🍶 ${g}g</span>
+            <span class="tag cal">🔥 ${d.kcal}kcal</span>
+            ${d.price?`<span class="tag yen">💰 ¥${d.price}</span>`:''}
+          </div>
+        </button>
+        <button class="qty-btn" onclick='openQtySheet(${JSON.stringify(d)})'>×2,×3…</button>
+      </div>`;
   }).join('');
 }
 
@@ -714,8 +819,9 @@ function renderMyDrinksGrid() {
           </div>
         </button>
         <div class="my-drink-actions">
-          <button class="btn-edit-tpl" onclick="showTemplateForm('${d.id}')">✏️ 編集</button>
-          <button class="btn-del-tpl"  onclick="deleteTemplate('${d.id}')">🗑 削除</button>
+          <button class="btn-qty-tpl" onclick='openQtySheet(${JSON.stringify(d)})'>×2,3</button>
+          <button class="btn-edit-tpl" onclick="showTemplateForm('${d.id}')">✏️</button>
+          <button class="btn-del-tpl"  onclick="deleteTemplate('${d.id}')">🗑</button>
         </div>
       </div>`;
   }).join('');
@@ -1144,6 +1250,7 @@ function switchTab(tab) {
   });
   if(tab==='history') { renderCalendar(); renderPeriodStats(); }
   if(tab==='profile') { syncProfileTab(); }
+  if(tab==='add')     { renderDrinksGrid(); renderMyDrinksGrid(); renderUsualSet(); }
 }
 
 // ============================================================
@@ -1158,6 +1265,7 @@ renderLog();
 renderCharacter();
 renderDrinksGrid();
 renderMyDrinksGrid();
+renderUsualSet();
 initAddDate();
 renderCalendar();
 renderPeriodStats();
