@@ -218,14 +218,7 @@
     <!-- Risk Legend -->
     <div class="risk-legend card">
       <div class="card-title">危険度の目安</div>
-      <div class="legend-list">
-        <div class="legend-item"><span class="legend-dot risk-none"></span>記録なし</div>
-        <div class="legend-item"><span class="legend-dot risk-1"></span>良好（〜50%）</div>
-        <div class="legend-item"><span class="legend-dot risk-2"></span>適量内（〜100%）</div>
-        <div class="legend-item"><span class="legend-dot risk-3"></span>注意（〜200%）</div>
-        <div class="legend-item"><span class="legend-dot risk-4"></span>危険（〜300%）</div>
-        <div class="legend-item"><span class="legend-dot risk-5"></span>深刻（300%超）</div>
-      </div>
+      <div class="legend-list" id="legend-list"></div>
     </div>
 
     <!-- Selected day detail -->
@@ -445,6 +438,42 @@
           ✅ 確定する
         </button>
       </div>
+    </div>
+
+    <!-- アカウント・同期 -->
+    <div class="section-label" style="margin-top:8px">アカウント・データ同期</div>
+
+    <!-- 未ログイン時 -->
+    <div class="card" id="account-logged-out">
+      <div class="account-lead">
+        ☁️ ログインすると、機種変更しても記録を引き継げます。<br>
+        <span style="color:var(--muted);font-size:0.7rem">ログインしなくても、この端末内では今まで通り使えます。</span>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="auth-tab-login" onclick="switchAuthTab('login')">ログイン</button>
+        <button class="auth-tab" id="auth-tab-signup" onclick="switchAuthTab('signup')">新規登録</button>
+      </div>
+      <div class="auth-form">
+        <input type="email" id="auth-email" class="auth-input" placeholder="メールアドレス" autocomplete="email">
+        <input type="password" id="auth-password" class="auth-input" placeholder="パスワード（6文字以上）" autocomplete="current-password">
+        <button class="btn-primary" id="auth-submit" onclick="handleAuthSubmit()">ログイン</button>
+      </div>
+      <div class="auth-divider"><span>または</span></div>
+      <button class="btn-google" onclick="handleGoogleLogin()">
+        <span class="g-icon">G</span> Googleで続ける
+      </button>
+    </div>
+
+    <!-- ログイン中 -->
+    <div class="card" id="account-logged-in" style="display:none">
+      <div class="account-info">
+        <span class="account-avatar">☁️</span>
+        <div>
+          <div class="account-email" id="account-email">—</div>
+          <div class="account-status">✅ クラウド同期中</div>
+        </div>
+      </div>
+      <button class="btn-danger" onclick="handleLogout()" style="margin-top:12px">ログアウト</button>
     </div>
 
     <!-- ホーム画面追加ガイド -->
@@ -700,6 +729,9 @@
   </button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="sync.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -606,15 +606,18 @@ header .tagline {
 .cal-day.sun .cal-day-num { color:#e06b6b; }
 .cal-day.sat .cal-day-num { color:#6baee0; }
 .cal-day.other-month .cal-day-num { color:rgba(136,146,164,0.4); }
-.cal-day-dot {
-  width:6px; height:6px;
-  border-radius:50%;
-  margin-top:3px;
-  background:var(--border);
+.cal-day-icon {
+  font-size:0.68rem;
+  line-height:1;
+  margin-top:2px;
+  height:0.8rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 .cal-day-gram { font-size:0.48rem; color:var(--muted); margin-top:1px; line-height:1; }
 
-/* Risk level backgrounds on cal day */
+/* Risk level backgrounds on cal day（背景色は補助的に維持。識別はアイコンが主） */
 .cal-day.risk-none { background:transparent; }
 .cal-day.risk-1 { background:var(--risk-1-bg); }
 .cal-day.risk-2 { background:var(--risk-2-bg); }
@@ -622,25 +625,23 @@ header .tagline {
 .cal-day.risk-4 { background:var(--risk-4-bg); }
 .cal-day.risk-5 { background:var(--risk-5-bg); }
 
-.cal-day.risk-1 .cal-day-dot { background:var(--risk-1-fg); }
-.cal-day.risk-2 .cal-day-dot { background:var(--risk-2-fg); }
-.cal-day.risk-3 .cal-day-dot { background:var(--risk-3-fg); }
-.cal-day.risk-4 .cal-day-dot { background:var(--risk-4-fg); }
-.cal-day.risk-5 .cal-day-dot { background:var(--risk-5-fg); }
-
-/* Risk Legend */
-.risk-legend .legend-list { display:flex; flex-wrap:wrap; gap:10px; }
+/* Risk Legend（アイコン＋ラベルの併記でユニバーサルデザイン） */
+.risk-legend .legend-list { display:flex; flex-wrap:wrap; gap:10px 14px; }
 .legend-item { display:flex; align-items:center; gap:6px; font-size:0.68rem; color:var(--muted); }
-.legend-dot {
-  width:10px; height:10px; border-radius:50%; flex-shrink:0;
-  background:var(--border);
+.legend-icon {
+  width:22px; height:22px; border-radius:7px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.78rem;
+  background:rgba(136,146,164,0.12);
+  border:1px solid var(--border);
 }
-.legend-dot.risk-none { background:rgba(136,146,164,0.2); border:1px solid var(--border); }
-.legend-dot.risk-1 { background:var(--risk-1-fg); }
-.legend-dot.risk-2 { background:var(--risk-2-fg); }
-.legend-dot.risk-3 { background:var(--risk-3-fg); }
-.legend-dot.risk-4 { background:var(--risk-4-fg); }
-.legend-dot.risk-5 { background:var(--risk-5-fg); }
+.legend-text { line-height:1.3; }
+.legend-icon.risk-none { background:rgba(136,146,164,0.12); }
+.legend-icon.risk-1 { background:var(--risk-1-bg); border-color:var(--risk-1-fg); }
+.legend-icon.risk-2 { background:var(--risk-2-bg); border-color:var(--risk-2-fg); }
+.legend-icon.risk-3 { background:var(--risk-3-bg); border-color:var(--risk-3-fg); }
+.legend-icon.risk-4 { background:var(--risk-4-bg); border-color:var(--risk-4-fg); }
+.legend-icon.risk-5 { background:var(--risk-5-bg); border-color:var(--risk-5-fg); }
 
 /* Day detail panel */
 .day-detail-header { display:flex; align-items:center; margin-bottom:12px; }
@@ -1445,6 +1446,112 @@ header .tagline {
 }
 
 .btn-edit-cancel:hover { border-color:var(--red); color:var(--red); }
+
+/* ---------- Account / Auth ---------- */
+.account-lead {
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.auth-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 14px;
+}
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  border-radius: 9px;
+  padding: 9px 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.15s;
+}
+.auth-tab.active {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.auth-form { display: flex; flex-direction: column; gap: 10px; }
+.auth-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: 'Noto Sans JP', sans-serif;
+  box-sizing: border-box;
+}
+.auth-input:focus { outline: none; border-color: var(--amber); }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  border: none;
+  color: #1f2937;
+  border-radius: 10px;
+  padding: 12px 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.btn-google:active { transform: scale(0.98); }
+.g-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: conic-gradient(from -45deg, #ea4335 0deg 90deg, #fbbc05 90deg 180deg, #34a853 180deg 270deg, #4285f4 270deg 360deg);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.account-avatar {
+  font-size: 1.6rem;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--amber-glow);
+  border: 1px solid rgba(240,165,0,0.3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.account-email { font-size: 0.88rem; font-weight: 700; color: var(--text); word-break: break-all; }
+.account-status { font-size: 0.72rem; color: var(--green); margin-top: 2px; }
 
 /* ---------- Scrollbar ---------- */
 ::-webkit-scrollbar       { width:4px; }

@@ -38,7 +38,8 @@ const CHAR_LEVELS = [
 ];
 
 const RISK_LABELS = ['記録なし','良好','適量内','注意','危険','深刻'];
-const RISK_ICONS  = ['⬜','🟢','🟡','🟠','🔴','☠️'];
+// 色に依存せず形で識別できるアイコン（ユニバーサルデザイン）
+const RISK_ICONS  = ['－','☘️','◎','△','⚠️','☠️'];
 const DAY_NAMES   = ['日','月','火','水','木','金','土'];
 
 // ============================================================
@@ -189,6 +190,22 @@ function getRiskLevel(gram) {
   return 5;
 }
 
+// 危険度の凡例を生成（色＋アイコン＋ラベルの三重表現でユニバーサルデザイン）
+function renderLegend() {
+  const el=document.getElementById('legend-list');
+  if(!el) return;
+  const ranges=['','〜50%','〜100%','〜200%','〜300%','300%超'];
+  el.innerHTML=RISK_LABELS.map((label,i)=>{
+    const cls=i===0?'risk-none':`risk-${i}`;
+    const range=ranges[i]?`（${ranges[i]}）`:'';
+    return `
+      <div class="legend-item">
+        <span class="legend-icon ${cls}">${RISK_ICONS[i]}</span>
+        <span class="legend-text">${label}${range}</span>
+      </div>`;
+  }).join('');
+}
+
 // ============================================================
 //  CALC HELPERS
 // ============================================================
@@ -254,6 +271,9 @@ function saveProfile() {
   const isNew = !state.profile;
   state.profile = { name, gender, age, height, weight };
   localStorage.setItem('nomi_profile', JSON.stringify(state.profile));
+
+  // クラウド同期（ログイン中のみ）
+  if (window.Sync) Sync.mirrorProfile(state.profile);
 
   renderProfileView();   // 確定ビューを更新
   renderHomeProfileBar(); // ホームのプロフィールバーを更新
@@ -604,10 +624,14 @@ function addDrink(drink, targetKey, qty, noSwitch) {
   const now=new Date();
   const time=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
   const log=getLogForKey(key);
+  const entry={icon:drink.icon,name:drink.name,detail:drink.sub,gram,kcal,price,time};
   for (let n=0; n<count; n++) {
-    log.unshift({icon:drink.icon,name:drink.name,detail:drink.sub,gram,kcal,price,time});
+    log.unshift({...entry});
   }
   saveLogForKey(key,log);
+
+  // クラウド同期（ログイン中のみ・バックグラウンド）
+  if (window.Sync) { for (let n=0; n<count; n++) Sync.mirrorAddLog(key, entry); }
 
   const isToday=(key===todayKey());
   if(isToday){ renderGauge(); renderLog(); renderCharacter(); }
@@ -743,6 +767,7 @@ function handleResetOverlayClick(event) {
 function confirmResetLog() {
   const tk = todayKey();
   saveLogForKey(tk, []);
+  if (window.Sync) Sync.mirrorResetDay(tk); // クラウドの今日分も削除
   renderGauge(); renderLog(); renderCharacter(); renderCalendar();
   // 履歴の日別詳細パネルが今日を表示中なら更新（古いログが残るのを防ぐ）
   if (state.selectedCalDay === tk) renderDayDetail(tk);
@@ -868,16 +893,20 @@ function saveTemplate() {
   if(!name||!ml||!pct){ showToast('⚠️ 名前・量・度数は必須です'); return; }
   const sub=`${ml}ml · ${pct}%`;
   const editId=document.getElementById('tpl-edit-id').value;
+  let savedTpl;
   if(editId){
     const idx=state.customDrinks.findIndex(x=>x.id===editId);
-    if(idx>=0) state.customDrinks[idx]={id:editId,icon,name,sub,ml,pct,kcal,price};
+    savedTpl={id:editId,icon,name,sub,ml,pct,kcal,price};
+    if(idx>=0) state.customDrinks[idx]=savedTpl;
     showToast('✏️ テンプレートを更新しました');
   } else {
     const id='custom_'+Date.now();
-    state.customDrinks.push({id,icon,name,sub,ml,pct,kcal,price});
+    savedTpl={id,icon,name,sub,ml,pct,kcal,price};
+    state.customDrinks.push(savedTpl);
     showToast('✅ テンプレートを保存しました');
   }
   saveCustomDrinks();
+  if (window.Sync) Sync.mirrorSaveTemplate(savedTpl); // クラウド同期
   hideTemplateForm();
   renderMyDrinksGrid();
 }
@@ -909,6 +938,7 @@ function confirmDeleteTemplate() {
   const tpl = state.customDrinks.find(d => d.id === id);
   state.customDrinks = state.customDrinks.filter(d => d.id !== id);
   saveCustomDrinks();
+  if (window.Sync) Sync.mirrorDeleteTemplate(id); // クラウド同期
   renderMyDrinksGrid();
   closeConfirmModal();
   showToast(`🗑 ${tpl ? tpl.name : 'テンプレート'} を削除しました`);
@@ -1017,13 +1047,14 @@ function renderCalendar() {
     const dow=dateObj.getDay();
     const dowClass=dow===0?'sun':dow===6?'sat':'';
     const gramLabel=gram>0?`${Math.round(gram)}g`:'';
+    const riskIcon=gram>0?RISK_ICONS[risk]:'';
     const isFuture=dateObj>todayMidnight; // 未来日は選択不可
 
     html+=`
       <div class="cal-day ${riskClass} ${isToday} ${isSel} ${dowClass} ${isFuture?'future':''}"
            ${isFuture?'':`onclick="selectCalDay('${key}')"`}>
         <span class="cal-day-num">${d}</span>
-        <span class="cal-day-dot"></span>
+        <span class="cal-day-icon">${riskIcon}</span>
         <span class="cal-day-gram">${gramLabel}</span>
       </div>`;
   }
@@ -1269,7 +1300,95 @@ renderUsualSet();
 initAddDate();
 renderCalendar();
 renderPeriodStats();
+renderLegend();
 initInstallBanner();
+initAuth();
+
+// ============================================================
+//  AUTH UI（ハイブリッド：ログインなしでも使える＋ログインで同期）
+// ============================================================
+let _authMode = 'login'; // 'login' | 'signup'
+
+function initAuth() {
+  // Supabase/Sync が読み込まれていなければスキップ（ローカルのみで動作）
+  if (!window.Sync || !window.supabase) {
+    console.log('クラウド同期は無効（ローカルのみで動作）');
+    return;
+  }
+  Sync.watchAuth((user) => {
+    updateAccountUI(user);
+    if (user) {
+      // ログイン直後：クラウドのデータを取り込んで再描画
+      setTimeout(() => {
+        loadState();
+        renderHomeProfileBar(); renderProfileView(); syncProfileTab();
+        renderGauge(); renderLog(); renderCharacter();
+        renderDrinksGrid(); renderMyDrinksGrid(); renderUsualSet();
+        renderCalendar(); renderPeriodStats();
+      }, 600);
+    }
+  });
+}
+
+function updateAccountUI(user) {
+  const loggedOut = document.getElementById('account-logged-out');
+  const loggedIn  = document.getElementById('account-logged-in');
+  if (!loggedOut || !loggedIn) return;
+  if (user) {
+    loggedOut.style.display = 'none';
+    loggedIn.style.display  = 'block';
+    document.getElementById('account-email').textContent = user.email || 'ログイン中';
+  } else {
+    loggedOut.style.display = 'block';
+    loggedIn.style.display  = 'none';
+  }
+}
+
+function switchAuthTab(mode) {
+  _authMode = mode;
+  document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('auth-tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('auth-submit').textContent = mode==='login' ? 'ログイン' : '新規登録';
+}
+
+async function handleAuthSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showToast('⚠️ メールとパスワードを入力してください'); return; }
+  if (password.length < 6) { showToast('⚠️ パスワードは6文字以上です'); return; }
+  const btn = document.getElementById('auth-submit');
+  btn.disabled = true; btn.textContent = '処理中...';
+  try {
+    if (_authMode === 'signup') {
+      await signUpEmail(email, password);
+      showToast('✅ 登録しました！データを同期します');
+    } else {
+      await signInEmail(email, password);
+      showToast('✅ ログインしました！');
+    }
+  } catch (e) {
+    showToast('⚠️ ' + (e.message || 'うまくいきませんでした'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = _authMode==='login' ? 'ログイン' : '新規登録';
+  }
+}
+
+async function handleGoogleLogin() {
+  try { await signInGoogle(); }
+  catch (e) { showToast('⚠️ ' + (e.message || 'Googleログインに失敗しました')); }
+}
+
+async function handleLogout() {
+  if (!confirm('ログアウトしますか？（端末内のデータは残ります）')) return;
+  try {
+    await signOut();
+    showToast('👋 ログアウトしました');
+    updateAccountUI(null);
+  } catch (e) {
+    showToast('⚠️ ' + (e.message || 'ログアウトに失敗しました'));
+  }
+}
 
 // ============================================================
 //  INSTALL GUIDE（ホーム画面に追加の説明）
