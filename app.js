@@ -1330,10 +1330,11 @@ function jpAuthError(e) {
 
 function initAuth() {
   // Supabase/Sync が読み込まれていなければスキップ（ローカルのみで動作）
-  if (!window.Sync || !window.supabase) {
+  if (!window.Sync || !window.sbClient) {
     console.log('クラウド同期は無効（ローカルのみで動作）');
     return;
   }
+  console.log('クラウド同期が有効です');
   Sync.watchAuth((user) => {
     updateAccountUI(user);
     if (user) {
@@ -1379,8 +1380,12 @@ async function handleAuthSubmit() {
   btn.disabled = true; btn.textContent = '処理中...';
   try {
     if (_authMode === 'signup') {
-      await signUpEmail(email, password);
-      showToast('✅ 登録しました！データを同期します');
+      const { needsConfirm } = await signUpEmail(email, password);
+      if (needsConfirm) {
+        showToast('📧 確認メールを送信しました。メール内のリンクを開いてください');
+      } else {
+        showToast('✅ 登録しました！データを同期します');
+      }
     } else {
       await signInEmail(email, password);
       showToast('✅ ログインしました！');

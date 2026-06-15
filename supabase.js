@@ -7,20 +7,25 @@
 // ============================================================
 
 // ── ① 接続設定（Supabaseダッシュボード > Settings > API から取得）──
-const SUPABASE_URL      = 'https://beivatogdzbtpygrcjka.supabase.co'; // ←自分のURLに置き換え
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJlaXZhdG9nZHpidHB5Z3JjamthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NDI5MjEsImV4cCI6MjA5NzAxODkyMX0.NhHwk5_cBLTJr1fajI4Qs1mPeUfVZU1GIa0oetCj_MA';                      // ←anon public キーに置き換え
+const SUPABASE_URL      = 'https://xxxxxxxxxxxx.supabase.co'; // ←自分のURLに置き換え
+const SUPABASE_ANON_KEY = 'eyJhbGci...';                      // ←anon public キーに置き換え
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 接続クライアントをグローバルに公開（app.js の判定用）
+window.sbClient = sb;
 
 // ============================================================
 //  認証 (Auth)
 // ============================================================
 
 // メール＋パスワードで新規登録
+// 戻り値 needsConfirm: true = メール確認が必要（セッション未発行）
 async function signUpEmail(email, password) {
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) throw error;
-  return data;
+  // session が無い = メール確認待ち。ある = 即ログイン状態
+  const needsConfirm = !data.session;
+  return { data, needsConfirm };
 }
 
 // メール＋パスワードでログイン
@@ -167,9 +172,11 @@ async function fetchTemplates() {
 async function saveTemplateCloud(tpl) {
   const user = await getCurrentUser();
   if (!user) throw new Error('未ログイン');
-  const row = { user_id: user.id, ...tpl };
+  // id を含めずに insert（id は DB が uuid を自動採番）
+  const { id, ...fields } = tpl;
+  const row = { user_id: user.id, ...fields };
   const { data, error } = await sb
-    .from('drink_templates').upsert(row).select().single();
+    .from('drink_templates').insert(row).select().single();
   if (error) throw error;
   return data;
 }
