@@ -1309,6 +1309,25 @@ initAuth();
 // ============================================================
 let _authMode = 'login'; // 'login' | 'signup'
 
+// Supabaseの英語エラーを日本語に変換
+function jpAuthError(e) {
+  const msg = (e && e.message ? e.message : String(e || '')).toLowerCase();
+  if (msg.includes('invalid login credentials')) return 'メールアドレスまたはパスワードが正しくありません';
+  if (msg.includes('email not confirmed'))       return 'メール確認が完了していません。受信メールのリンクを確認してください';
+  if (msg.includes('user already registered') || msg.includes('already been registered'))
+    return 'このメールアドレスは既に登録されています。ログインしてください';
+  if (msg.includes('password should be at least')) return 'パスワードは6文字以上で入力してください';
+  if (msg.includes('unable to validate email') || msg.includes('invalid email'))
+    return 'メールアドレスの形式が正しくありません';
+  if (msg.includes('provider is not enabled'))    return 'このログイン方法は現在無効です（管理側で有効化が必要）';
+  if (msg.includes('rate limit') || msg.includes('too many'))
+    return '試行回数が多すぎます。しばらく待ってからお試しください';
+  if (msg.includes('network') || msg.includes('failed to fetch'))
+    return 'ネットワークに接続できませんでした。通信環境を確認してください';
+  if (msg.includes('signups not allowed'))        return '現在、新規登録が制限されています';
+  return 'うまくいきませんでした（' + (e && e.message ? e.message : '不明なエラー') + '）';
+}
+
 function initAuth() {
   // Supabase/Sync が読み込まれていなければスキップ（ローカルのみで動作）
   if (!window.Sync || !window.supabase) {
@@ -1367,7 +1386,7 @@ async function handleAuthSubmit() {
       showToast('✅ ログインしました！');
     }
   } catch (e) {
-    showToast('⚠️ ' + (e.message || 'うまくいきませんでした'));
+    showToast('⚠️ ' + jpAuthError(e));
   } finally {
     btn.disabled = false;
     btn.textContent = _authMode==='login' ? 'ログイン' : '新規登録';
@@ -1376,7 +1395,7 @@ async function handleAuthSubmit() {
 
 async function handleGoogleLogin() {
   try { await signInGoogle(); }
-  catch (e) { showToast('⚠️ ' + (e.message || 'Googleログインに失敗しました')); }
+  catch (e) { showToast('⚠️ ' + jpAuthError(e)); }
 }
 
 async function handleLogout() {
@@ -1386,7 +1405,7 @@ async function handleLogout() {
     showToast('👋 ログアウトしました');
     updateAccountUI(null);
   } catch (e) {
-    showToast('⚠️ ' + (e.message || 'ログアウトに失敗しました'));
+    showToast('⚠️ ' + jpAuthError(e));
   }
 }
 

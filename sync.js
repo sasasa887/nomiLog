@@ -90,39 +90,46 @@ const Sync = (() => {
   // いずれもログイン中のみ動作。失敗してもアプリは止めない（fire-and-forget）
 
   // プロフィール保存をミラー
-  function mirrorProfile(profile) {
-    if (!_user) return;
+  async function mirrorProfile(profile) {
+    if (!(await getCurrentUser())) return;
     saveProfileCloud(profile).catch(e => console.warn('profile同期失敗', e));
   }
 
   // 1杯追加をミラー（drank_on は 'YYYY-MM-DD'）
-  function mirrorAddLog(dateKey, entry) {
-    if (!_user) return;
+  async function mirrorAddLog(dateKey, entry) {
+    if (!(await getCurrentUser())) return;
     const [y, m, d] = dateKey.split('-');
     const drank_on = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    addLogCloud({
-      drank_on,
-      icon: entry.icon, name: entry.name, detail: entry.detail,
-      gram: entry.gram, kcal: entry.kcal, price: entry.price || 0,
-    }).catch(e => console.warn('log追加同期失敗', e));
+    try {
+      await addLogCloud({
+        drank_on,
+        icon: entry.icon, name: entry.name, detail: entry.detail,
+        gram: entry.gram, kcal: entry.kcal, price: entry.price || 0,
+      });
+    } catch (e) { console.warn('log追加同期失敗', e); }
   }
 
   // 指定日を一括削除（リセット）をミラー
-  function mirrorResetDay(dateKey) {
-    if (!_user) return;
+  async function mirrorResetDay(dateKey) {
+    if (!(await getCurrentUser())) return;
     const [y, m, d] = dateKey.split('-');
     const drank_on = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     deleteLogsByDate(drank_on).catch(e => console.warn('日付リセット同期失敗', e));
   }
 
   // テンプレ保存・削除をミラー
-  function mirrorSaveTemplate(tpl) {
-    if (!_user) return;
-    saveTemplateCloud(tpl).catch(e => console.warn('テンプレ同期失敗', e));
+  async function mirrorSaveTemplate(tpl) {
+    if (!(await getCurrentUser())) return;
+    // localStorage の custom_xxx という文字列IDはDB(uuid)に渡せないので除外
+    const { id, ...rest } = tpl;
+    saveTemplateCloud(rest).catch(e => console.warn('テンプレ同期失敗', e));
   }
-  function mirrorDeleteTemplate(tplId) {
-    if (!_user) return;
-    deleteTemplateCloud(tplId).catch(e => console.warn('テンプレ削除同期失敗', e));
+  async function mirrorDeleteTemplate(tplId) {
+    if (!(await getCurrentUser())) return;
+    // uuid 形式のときだけクラウド削除（localStorage専用IDは無視）
+    if (/^[0-9a-f]{8}-/.test(tplId)) {
+      deleteTemplateCloud(tplId).catch(e => console.warn('テンプレ削除同期失敗', e));
+    }
   }
 
   return {
