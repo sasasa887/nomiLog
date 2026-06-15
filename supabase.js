@@ -7,8 +7,8 @@
 // ============================================================
 
 // ── ① 接続設定（Supabaseダッシュボード > Settings > API から取得）──
-const SUPABASE_URL      = 'https://xxxxxxxxxxxx.supabase.co'; // ←自分のURLに置き換え
-const SUPABASE_ANON_KEY = 'eyJhbGci...';                      // ←anon public キーに置き換え
+const SUPABASE_URL      = 'https://beivatogdzbtpygrcjka.supabase.co'; // ←自分のURLに置き換え
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJlaXZhdG9nZHpidHB5Z3JjamthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NDI5MjEsImV4cCI6MjA5NzAxODkyMX0.NhHwk5_cBLTJr1fajI4Qs1mPeUfVZU1GIa0oetCj_MA';                      // ←anon public キーに置き換え
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // 接続クライアントをグローバルに公開（app.js の判定用）
