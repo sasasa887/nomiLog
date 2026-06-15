@@ -23,9 +23,8 @@ window.sbClient = sb;
 async function signUpEmail(email, password) {
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) throw error;
-  // session が無い = メール確認待ち。ある = 即ログイン状態
-  const needsConfirm = !data.session;
-  return { data, needsConfirm };
+  const needsConfirm = !data.session;   // ← 追加
+  return { data, needsConfirm };        // ← 戻り値が変わった
 }
 
 // メール＋パスワードでログイン
