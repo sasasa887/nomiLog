@@ -138,3 +138,6 @@ const Sync = (() => {
     mirrorSaveTemplate, mirrorDeleteTemplate,
   };
 })();
+
+// app.js から window.Sync で参照できるように公開
+window.Sync = Sync;
