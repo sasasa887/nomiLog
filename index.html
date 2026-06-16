@@ -4,6 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>🍶 のみログ</title>
+  <meta name="description" content="飲酒量・カロリー・お金を記録して、お酒との付き合い方を見直すアプリ。20歳以上向け。">
+
+  <!-- Favicon / アイコン -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icon-16.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1a1d24">
+
+  <!-- OGP（SNSシェア用）-->
+  <meta property="og:title" content="のみログ">
+  <meta property="og:description" content="飲酒量・カロリー・お金を記録して、お酒との付き合い方を見直すアプリ">
+  <meta property="og:type" content="website">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -458,6 +474,18 @@
         <input type="password" id="auth-password" class="auth-input" placeholder="パスワード（6文字以上）" autocomplete="current-password">
         <button class="btn-primary" id="auth-submit" onclick="handleAuthSubmit()">ログイン</button>
       </div>
+
+      <!-- メール確認待ちの案内（登録後に表示） -->
+      <div id="confirm-pending" class="confirm-pending" style="display:none">
+        <div class="confirm-pending-icon">📧</div>
+        <div class="confirm-pending-text">
+          <strong>確認メールを送信しました</strong><br>
+          メール内のリンクを開くと登録が完了します。<br>
+          <span class="confirm-pending-sub">届かない場合は迷惑メールフォルダもご確認ください。</span>
+        </div>
+        <button class="btn-resend" onclick="handleResendConfirm()">確認メールを再送する</button>
+      </div>
+
       <div class="auth-divider"><span>または</span></div>
       <button class="btn-google" onclick="handleGoogleLogin()">
         <span class="g-icon">G</span> Googleで続ける
@@ -490,6 +518,14 @@
         <span class="install-guide-arrow">›</span>
       </div>
     </div>
+
+    <!-- 規約・ポリシー -->
+    <div class="legal-links">
+      <a href="terms.html" class="legal-link">利用規約</a>
+      <span class="legal-sep">・</span>
+      <a href="privacy.html" class="legal-link">プライバシーポリシー</a>
+    </div>
+    <div class="legal-note">のみログは20歳以上の方を対象としています。<br>飲酒は適量を守り、健康に配慮してご利用ください。</div>
 
   </div><!-- /page-profile -->
 

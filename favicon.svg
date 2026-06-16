@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#1a1d24"/>
+  <!-- ビールジョッキ -->
+  <g transform="translate(18,14)">
+    <!-- 取っ手 -->
+    <path d="M22 8 h6 a6 6 0 0 1 6 6 v10 a6 6 0 0 1 -6 6 h-3"
+          fill="none" stroke="#f0a500" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- ジョッキ本体 -->
+    <rect x="2" y="6" width="22" height="30" rx="3" fill="#f0a500"/>
+    <!-- 泡 -->
+    <circle cx="7"  cy="6" r="5" fill="#fff4d6"/>
+    <circle cx="14" cy="4" r="6" fill="#fff4d6"/>
+    <circle cx="21" cy="6" r="5" fill="#fff4d6"/>
+    <!-- ビールの液面ハイライト -->
+    <rect x="5" y="14" width="16" height="3" rx="1.5" fill="#ffd166" opacity="0.7"/>
+  </g>
+</svg>
