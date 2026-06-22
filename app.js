@@ -40,7 +40,8 @@ const CHAR_LEVELS = [
 const RISK_LABELS = ['記録なし','良好','適量内','注意','危険','深刻'];
 // 色に依存せず形で識別できるアイコン（ユニバーサルデザイン）
 const RISK_ICONS  = ['－','☘️','◎','△','⚠️','☠️'];
-const DAY_NAMES   = ['日','月','火','水','木','金','土'];
+// DAY_NAMES, dateToKey, keyToDate, formatDateJP,
+// calcGram, calcKcalAlc, toLocalDateInput, getKeysInRange は lib/calc.js で定義
 
 // ============================================================
 //  STATE
@@ -60,18 +61,8 @@ const state = {
 // ============================================================
 //  DATE HELPERS
 // ============================================================
-function dateToKey(d) {
-  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-}
+// dateToKey / keyToDate / formatDateJP は lib/calc.js を参照
 function todayKey() { return dateToKey(new Date()); }
-function keyToDate(k) {
-  const [y,m,d] = k.split('-').map(Number);
-  return new Date(y, m-1, d);
-}
-function formatDateJP(key) {
-  const d = keyToDate(key);
-  return `${d.getMonth()+1}月${d.getDate()}日(${DAY_NAMES[d.getDay()]})`;
-}
 
 // ============================================================
 //  STORAGE — LOG
@@ -135,12 +126,7 @@ function getAllHistoryStats() {
   return { totalPrice, totalGram, totalKcal, recordDays, firstDate };
 }
 
-// Get all date keys that have log data (scan last N days + month range)
-function getKeysInRange(startDate, endDate) {
-  const keys=[]; const cur=new Date(startDate);
-  while(cur<=endDate){ keys.push(dateToKey(cur)); cur.setDate(cur.getDate()+1); }
-  return keys;
-}
+// getKeysInRange は lib/calc.js を参照
 
 // ============================================================
 //  STORAGE — PROFILE & CUSTOM DRINKS
@@ -181,13 +167,7 @@ function showToast(msg) {
 //  RISK LEVEL
 // ============================================================
 function getRiskLevel(gram) {
-  const lim=getLimit();
-  if(gram<=0) return 0;
-  if(gram<=lim*0.5) return 1;
-  if(gram<=lim) return 2;
-  if(gram<=lim*2) return 3;
-  if(gram<=lim*3) return 4;
-  return 5;
+  return calcRiskLevel(gram, getLimit());
 }
 
 // 危険度の凡例を生成（色＋アイコン＋ラベルの三重表現でユニバーサルデザイン）
@@ -206,11 +186,7 @@ function renderLegend() {
   }).join('');
 }
 
-// ============================================================
-//  CALC HELPERS
-// ============================================================
-const calcGram    = (ml,pct) => Math.round(ml*(pct/100)*0.8*10)/10;
-const calcKcalAlc = (ml,pct) => Math.round(ml*(pct/100)*0.8*7.1);
+// calcGram / calcKcalAlc は lib/calc.js を参照
 
 // ============================================================
 //  PROFILE  (view / edit モード管理)
@@ -956,13 +932,7 @@ function updateTplPreview() {
 // ============================================================
 //  ADD DATE SELECTOR
 // ============================================================
-// ローカルタイムの YYYY-MM-DD 文字列（input[type=date]用）
-function toLocalDateInput(d) {
-  const y=d.getFullYear();
-  const m=String(d.getMonth()+1).padStart(2,'0');
-  const day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
+// toLocalDateInput は lib/calc.js を参照
 
 function initAddDate() {
   const input=document.getElementById('add-date');

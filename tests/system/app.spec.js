@@ -1,0 +1,189 @@
+'use strict';
+
+const { test, expect } = require('@playwright/test');
+
+// ============================================================
+//  ヘルパー
+// ============================================================
+async function clearAppStorage(page) {
+  await page.evaluate(() => {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('nomi_'))
+      .forEach(k => localStorage.removeItem(k));
+  });
+}
+
+async function setProfile(page, opts = {}) {
+  const p = { name: 'テスト太郎', gender: 'male', age: 30, height: 175, weight: 70, ...opts };
+  await page.evaluate((profile) => {
+    localStorage.setItem('nomi_profile', JSON.stringify(profile));
+  }, p);
+}
+
+// ============================================================
+//  基本レンダリング
+// ============================================================
+test.describe('ページ読み込み', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await clearAppStorage(page);
+    await page.reload();
+  });
+
+  test('タイトルが "のみログ" である', async ({ page }) => {
+    await expect(page).toHaveTitle(/のみログ/);
+  });
+
+  test('ボトムナビが 4 タブ表示される', async ({ page }) => {
+    const tabs = page.locator('.tab-btn');
+    await expect(tabs).toHaveCount(4);
+  });
+
+  test('プロフィール未設定時に入力フォームが表示される', async ({ page }) => {
+    await page.locator('#tab-profile').click();
+    await expect(page.locator('#profile-edit-section')).toBeVisible();
+  });
+});
+
+// ============================================================
+//  タブナビゲーション
+// ============================================================
+test.describe('タブナビゲーション', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await clearAppStorage(page);
+    await page.reload();
+  });
+
+  test('追加タブに切り替えると飲み物グリッドが表示される', async ({ page }) => {
+    await page.locator('#tab-add').click();
+    await expect(page.locator('#drinks-grid')).toBeVisible();
+  });
+
+  test('履歴タブに切り替えるとカレンダーが表示される', async ({ page }) => {
+    await page.locator('#tab-history').click();
+    await expect(page.locator('#cal-grid')).toBeVisible();
+  });
+
+  test('プロフィールタブに切り替えるとプロフィールセクションが表示される', async ({ page }) => {
+    await page.locator('#tab-profile').click();
+    await expect(page.locator('#page-profile')).toBeVisible();
+  });
+});
+
+// ============================================================
+//  飲み物追加フロー
+// ============================================================
+test.describe('飲み物追加', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await clearAppStorage(page);
+    await setProfile(page);
+    await page.reload();
+    await page.locator('#tab-add').click();
+  });
+
+  test('ビールボタンをクリックするとログに追加されホームに戻る', async ({ page }) => {
+    const beerBtn = page.locator('.drink-btn').filter({ hasText: 'ビール' }).first();
+    await beerBtn.click();
+
+    // ホームタブに自動遷移する
+    await expect(page.locator('#page-home')).toHaveClass(/active/);
+    // ログリストに記録が表示される
+    await expect(page.locator('#log-list .log-item')).toHaveCount(1);
+  });
+
+  test('ゲージが 0 より大きくなる', async ({ page }) => {
+    const beerBtn = page.locator('.drink-btn').filter({ hasText: 'ビール' }).first();
+    await beerBtn.click();
+    const gauge = page.locator('#gauge-fill');
+    const width = await gauge.evaluate(el => parseFloat(el.style.width));
+    expect(width).toBeGreaterThan(0);
+  });
+
+  test('同じ飲み物を 2 回追加するとログが 2 件になる', async ({ page }) => {
+    const beerBtn = page.locator('.drink-btn').filter({ hasText: 'ビール' }).first();
+    await beerBtn.click();
+    await page.locator('#tab-add').click();
+    await beerBtn.click();
+    await expect(page.locator('#log-list .log-item')).toHaveCount(2);
+  });
+});
+
+// ============================================================
+//  マイテンプレート CRUD
+// ============================================================
+test.describe('マイテンプレート', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await clearAppStorage(page);
+    await page.reload();
+    await page.locator('#tab-add').click();
+    await page.locator('.btn-add-template').click();
+  });
+
+  test('テンプレートフォームが表示される', async ({ page }) => {
+    await expect(page.locator('#template-form')).toBeVisible();
+  });
+
+  test('必須項目を入力して保存するとグリッドに追加される', async ({ page }) => {
+    await page.locator('#tpl-name').fill('梅酒');
+    await page.locator('#tpl-icon').fill('🍹');
+    await page.locator('#tpl-ml').fill('150');
+    await page.locator('#tpl-pct').fill('8');
+    await page.locator('#tpl-kcal').fill('120');
+    await page.getByRole('button', { name: '保存' }).click();
+
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toBeVisible();
+  });
+
+  test('必須項目が空のまま保存するとトーストエラーが出る', async ({ page }) => {
+    await page.getByRole('button', { name: '保存' }).click();
+    await expect(page.locator('#toast')).toHaveClass(/show/);
+  });
+});
+
+// ============================================================
+//  プロフィール設定フロー
+// ============================================================
+test.describe('プロフィール設定', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await clearAppStorage(page);
+    await page.reload();
+    await page.locator('#tab-profile').click();
+  });
+
+  test('プロフィールを入力して確定するとプロフィールビューに切り替わる', async ({ page }) => {
+    await page.locator('#p-name').fill('テスト次郎');
+    await page.locator('#p-age').fill('25');
+    await page.locator('#p-height').fill('170');
+    await page.locator('#p-weight').fill('65');
+    await page.locator('#btn-save-profile').click();
+
+    await expect(page.locator('#profile-view-section')).toBeVisible();
+    await expect(page.locator('#pv-name')).toHaveText('テスト次郎');
+  });
+
+  test('プロフィール保存後に編集ボタンで編集モードに戻れる', async ({ page }) => {
+    await setProfile(page);
+    await page.reload();
+    await page.locator('#tab-profile').click();
+    await page.getByRole('button', { name: '✏️ 編集する' }).click();
+    await expect(page.locator('#profile-edit-section')).toBeVisible();
+  });
+});
+
+// ============================================================
+//  Googleログインボタン（準備中）
+// ============================================================
+test.describe('Googleログインボタン', () => {
+  test('Googleログインボタンが「準備中」で disabled になっている', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#tab-profile').click();
+    const googleBtn = page.locator('.btn-google');
+    await expect(googleBtn).toBeVisible();
+    await expect(googleBtn).toBeDisabled();
+    await expect(googleBtn).toContainText('準備中');
+  });
+});
