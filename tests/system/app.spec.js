@@ -187,3 +187,89 @@ test.describe('Googleログインボタン', () => {
     await expect(googleBtn).toContainText('準備中');
   });
 });
+
+// ============================================================
+//  AI クイック追加
+// ============================================================
+test.describe('AIクイック追加', () => {
+  const MOCK_SAKE = { icon: '🍶', ml: 180, pct: 15, kcal: 153, price: 300 };
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await clearAppStorage(page);
+    await page.reload();
+    // ページロード後に sbClient.functions.invoke をモック
+    await page.evaluate((mockData) => {
+      if (!window.sbClient) window.sbClient = {};
+      if (!window.sbClient.functions) window.sbClient.functions = {};
+      window.sbClient.functions.invoke = async (name) => {
+        if (name === 'sake-lookup') return { data: mockData, error: null };
+        return { data: null, error: new Error('unexpected function: ' + name) };
+      };
+    }, MOCK_SAKE);
+    await page.locator('#tab-add').click();
+  });
+
+  test('クイック追加カードが表示される', async ({ page }) => {
+    await expect(page.locator('.ai-quick-add-card')).toBeVisible();
+    await expect(page.locator('#quick-add-name')).toBeVisible();
+    await expect(page.locator('#btn-quick-add')).toBeVisible();
+  });
+
+  test('名前を入力してAIで追加するとグリッドに追加される', async ({ page }) => {
+    await page.locator('#quick-add-name').fill('テスト日本酒');
+    await page.locator('#btn-quick-add').click();
+
+    await expect(
+      page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: 'テスト日本酒' })
+    ).toBeVisible({ timeout: 10000 });
+  });
+
+  test('追加後に名前欄がクリアされる', async ({ page }) => {
+    await page.locator('#quick-add-name').fill('テスト日本酒');
+    await page.locator('#btn-quick-add').click();
+
+    await expect(
+      page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: 'テスト日本酒' })
+    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#quick-add-name')).toHaveValue('');
+  });
+
+  test('Enter キーでも追加できる', async ({ page }) => {
+    await page.locator('#quick-add-name').fill('テスト梅酒');
+    await page.locator('#quick-add-name').press('Enter');
+
+    await expect(
+      page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: 'テスト梅酒' })
+    ).toBeVisible({ timeout: 10000 });
+  });
+
+  test('名前が空のまま追加するとトーストが出る', async ({ page }) => {
+    await page.locator('#btn-quick-add').click();
+    await expect(page.locator('#toast')).toHaveClass(/show/);
+  });
+
+  test('追加したテンプレートをクリックすると記録に追加される', async ({ page }) => {
+    await setProfile(page);
+    await page.reload();
+    await page.evaluate((mockData) => {
+      if (!window.sbClient) window.sbClient = {};
+      if (!window.sbClient.functions) window.sbClient.functions = {};
+      window.sbClient.functions.invoke = async (name) => {
+        if (name === 'sake-lookup') return { data: mockData, error: null };
+        return { data: null, error: new Error('unexpected function: ' + name) };
+      };
+    }, MOCK_SAKE);
+    await page.locator('#tab-add').click();
+
+    await page.locator('#quick-add-name').fill('テスト日本酒');
+    await page.locator('#btn-quick-add').click();
+
+    const btn = page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: 'テスト日本酒' });
+    await expect(btn).toBeVisible({ timeout: 10000 });
+    await btn.click();
+
+    await expect(page.locator('#page-home')).toHaveClass(/active/);
+    await expect(page.locator('#log-list .log-item')).toHaveCount(1);
+  });
+});

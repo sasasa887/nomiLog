@@ -277,12 +277,23 @@
       マイテンプレート
       <span style="font-size:0.6rem;color:var(--muted);letter-spacing:0;text-transform:none;margin-left:6px">保存済みのお酒</span>
     </div>
+    <!-- AI クイック追加 -->
+    <div class="card ai-quick-add-card">
+      <div class="card-title">🤖 名前だけで追加</div>
+      <div class="ai-quick-row">
+        <input type="text" id="quick-add-name" placeholder="例：獺祭 純米大吟醸"
+               onkeydown="if(event.key==='Enter') quickAddByAI()">
+        <button id="btn-quick-add" class="btn-quick-add" onclick="quickAddByAI()">AIで追加</button>
+      </div>
+      <p id="quick-add-status" class="quick-add-status"></p>
+    </div>
+
     <div id="my-templates-empty" class="empty-log" style="display:none">
       まだカスタムテンプレートがありません
     </div>
     <div class="drinks-grid" id="my-drinks-grid"></div>
     <button class="btn-add-template" onclick="showTemplateForm(null)">
-      ＋ テンプレートを追加
+      ＋ 手動で詳細を入力
     </button>
 
     <!-- Template form -->
