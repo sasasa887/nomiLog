@@ -1,0 +1,16 @@
+{
+  "name": "nomi-log",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:unit": "jest --selectProjects unit",
+    "test:integration": "jest --selectProjects integration",
+    "test:system": "playwright test",
+    "test": "jest && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}

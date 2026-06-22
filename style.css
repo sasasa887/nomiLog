@@ -423,6 +423,18 @@ header .tagline {
 
 /* ---------- Template Form ---------- */
 .custom-input-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.ai-fill-row { display:flex; gap:8px; align-items:center; }
+.ai-fill-row input { flex:1; min-width:0; }
+.btn-ai-fill {
+  white-space:nowrap; flex-shrink:0;
+  background:linear-gradient(135deg,#8b5cf6,#6d28d9);
+  color:#fff; border:none; border-radius:8px;
+  padding:9px 12px; font-size:0.72rem;
+  font-family:'Noto Sans JP',sans-serif;
+  cursor:pointer; transition:opacity 0.2s;
+}
+.btn-ai-fill:hover { opacity:0.85; }
+.btn-ai-fill:disabled { opacity:0.5; cursor:not-allowed; }
 .custom-preview { text-align:center; padding:8px 0; font-size:0.78rem; color:var(--muted); min-height:36px; }
 .btn-cancel {
   flex:1; margin-top:10px;
