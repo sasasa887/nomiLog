@@ -1280,8 +1280,101 @@ function switchTab(tab) {
     document.getElementById(`tab-${t}`)?.classList.toggle('active',t===tab);
   });
   if(tab==='history') { renderCalendar(); renderPeriodStats(); }
-  if(tab==='profile') { syncProfileTab(); }
+  if(tab==='profile') { syncProfileTab(); updateApiKeyStatus(); }
   if(tab==='add')     { renderDrinksGrid(); renderMyDrinksGrid(); renderUsualSet(); }
+}
+
+// ============================================================
+//  AI AUTO-FILL
+// ============================================================
+async function aiAutoFillTemplate() {
+  const name = document.getElementById('tpl-name').value.trim();
+  if (!name) { showToast('⚠️ まず名前を入力してください'); return; }
+
+  let apiKey = localStorage.getItem('nomi_anthropic_key');
+  if (!apiKey) {
+    showToast('⚠️ プロフィール > AI設定でAPIキーを登録してください');
+    return;
+  }
+
+  const btn = document.getElementById('btn-ai-fill');
+  btn.textContent = '⏳ 検索中…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 256,
+        messages: [{
+          role: 'user',
+          content: `お酒「${name}」の一般的な情報をJSONのみで返してください。余分なテキストは不要です。\n{"icon":"絵文字1文字","ml":数値,"pct":数値,"kcal":数値,"price":数値}\n- icon: そのお酒に合う絵文字（1文字）\n- ml: 一般的な一杯分の量（ml、整数）\n- pct: アルコール度数（%、小数可）\n- kcal: 一杯分のカロリー（kcal、整数）\n- price: 居酒屋での一般的な価格（円、整数）`
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        localStorage.removeItem('nomi_anthropic_key');
+        updateApiKeyStatus();
+        showToast('❌ APIキーが無効です。再設定してください');
+      } else {
+        showToast(`❌ エラー: ${err.error?.message || res.statusText}`);
+      }
+      return;
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) { showToast('❌ AIの返答を解析できませんでした'); return; }
+    const json = JSON.parse(match[0]);
+
+    if (json.icon)  document.getElementById('tpl-icon').value  = json.icon;
+    if (json.ml)    document.getElementById('tpl-ml').value    = json.ml;
+    if (json.pct)   document.getElementById('tpl-pct').value   = json.pct;
+    if (json.kcal)  document.getElementById('tpl-kcal').value  = json.kcal;
+    if (json.price) document.getElementById('tpl-price').value = json.price;
+    updateTplPreview();
+    showToast('✨ AI自動入力完了！内容を確認してください');
+  } catch (e) {
+    showToast('❌ 通信エラーが発生しました');
+    console.error(e);
+  } finally {
+    btn.textContent = '🤖 AI自動入力';
+    btn.disabled = false;
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('ai-api-key-input').value.trim();
+  if (!key) { showToast('⚠️ APIキーを入力してください'); return; }
+  localStorage.setItem('nomi_anthropic_key', key);
+  document.getElementById('ai-api-key-input').value = '';
+  updateApiKeyStatus();
+  showToast('✅ APIキーを保存しました');
+}
+
+function clearApiKey() {
+  localStorage.removeItem('nomi_anthropic_key');
+  document.getElementById('ai-api-key-input').value = '';
+  updateApiKeyStatus();
+  showToast('🗑 APIキーを削除しました');
+}
+
+function updateApiKeyStatus() {
+  const el = document.getElementById('ai-key-status');
+  if (!el) return;
+  const key = localStorage.getItem('nomi_anthropic_key');
+  el.textContent = key ? `✅ APIキー設定済み (${key.slice(0, 12)}...)` : '未設定';
 }
 
 // ============================================================

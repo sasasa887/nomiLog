@@ -290,9 +290,12 @@
       <div class="card-title" id="tpl-form-title">テンプレートを追加</div>
       <input type="hidden" id="tpl-edit-id">
       <div class="custom-input-grid">
-        <div class="form-group">
+        <div class="form-group" style="grid-column:1/-1">
           <label>名前</label>
-          <input type="text" id="tpl-name" placeholder="梅酒">
+          <div class="ai-fill-row">
+            <input type="text" id="tpl-name" placeholder="獺祭 純米大吟醸">
+            <button id="btn-ai-fill" class="btn-ai-fill" onclick="aiAutoFillTemplate()" type="button">🤖 AI自動入力</button>
+          </div>
         </div>
         <div class="form-group">
           <label>アイコン</label>
@@ -517,6 +520,22 @@
         </div>
         <span class="install-guide-arrow">›</span>
       </div>
+    </div>
+
+    <!-- AI設定 -->
+    <div class="section-label" style="margin-top:8px">AI設定</div>
+    <div class="card">
+      <div class="card-title">🤖 Claude AI 自動入力</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">Anthropic APIキーを設定すると、テンプレートでお酒の名前を入力するだけでml・度数・カロリーを自動入力できます。</p>
+      <div class="form-group">
+        <label>Anthropic APIキー</label>
+        <input type="password" id="ai-api-key-input" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-primary" style="flex:1;margin-top:0" onclick="saveApiKey()">保存</button>
+        <button class="btn-cancel" style="margin-top:0" onclick="clearApiKey()">削除</button>
+      </div>
+      <p id="ai-key-status" style="font-size:0.75rem;color:var(--muted);margin-top:8px;text-align:center"></p>
     </div>
 
     <!-- 規約・ポリシー -->
