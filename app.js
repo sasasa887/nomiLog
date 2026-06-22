@@ -1255,6 +1255,62 @@ function switchTab(tab) {
 }
 
 // ============================================================
+//  AI QUICK ADD（名前だけで一発追加）
+// ============================================================
+async function quickAddByAI() {
+  const nameEl   = document.getElementById('quick-add-name');
+  const btn      = document.getElementById('btn-quick-add');
+  const statusEl = document.getElementById('quick-add-status');
+  const name     = nameEl.value.trim();
+
+  if (!name) { showToast('⚠️ お酒の名前を入力してください'); return; }
+
+  btn.disabled      = true;
+  btn.textContent   = '⏳ 検索中…';
+  statusEl.textContent = `「${name}」の情報をAIが調べています…`;
+
+  try {
+    const { data, error } = await window.sbClient.functions.invoke('sake-lookup', {
+      body: { name },
+    });
+
+    if (error || data.error) {
+      showToast(`❌ ${(error || data).message || '通信エラー'}`);
+      statusEl.textContent = '';
+      return;
+    }
+
+    const ml   = Number(data.ml)   || 100;
+    const pct  = Number(data.pct)  || 5;
+    const kcal = Number(data.kcal) || calcKcalAlc(ml, pct);
+    const tpl  = {
+      id:    'custom_' + Date.now(),
+      icon:  data.icon  || '🍶',
+      name,
+      sub:   `${ml}ml · ${pct}%`,
+      ml, pct, kcal,
+      price: Number(data.price) || 0,
+    };
+
+    state.customDrinks.push(tpl);
+    saveCustomDrinks();
+    if (window.Sync) Sync.mirrorSaveTemplate(tpl);
+    renderMyDrinksGrid();
+
+    nameEl.value         = '';
+    statusEl.textContent = '';
+    showToast(`✅ ${tpl.icon} ${name} をテンプレートに追加しました`);
+  } catch (e) {
+    showToast('❌ 通信エラーが発生しました');
+    statusEl.textContent = '';
+    console.error(e);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'AIで追加';
+  }
+}
+
+// ============================================================
 //  AI AUTO-FILL
 // ============================================================
 let _aiDebounceTimer = null;

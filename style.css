@@ -421,6 +421,26 @@ header .tagline {
 }
 .date-sel-note { font-size:0.65rem; color:var(--muted); margin-top:6px; }
 
+/* ---------- AI Quick Add ---------- */
+.ai-quick-add-card { padding:14px 16px; margin-bottom:12px; }
+.ai-quick-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.ai-quick-row input { flex:1; min-width:0; }
+.btn-quick-add {
+  white-space:nowrap; flex-shrink:0;
+  background:linear-gradient(135deg,#8b5cf6,#6d28d9);
+  color:#fff; border:none; border-radius:8px;
+  padding:10px 16px; font-size:0.8rem;
+  font-family:'Noto Sans JP',sans-serif;
+  cursor:pointer; transition:opacity 0.2s;
+  font-weight:500;
+}
+.btn-quick-add:hover  { opacity:0.85; }
+.btn-quick-add:disabled { opacity:0.5; cursor:not-allowed; }
+.quick-add-status {
+  font-size:0.72rem; color:var(--muted);
+  margin-top:6px; min-height:16px; text-align:center;
+}
+
 /* ---------- Template Form ---------- */
 .custom-input-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
 .ai-fill-row { display:flex; gap:8px; align-items:center; }
