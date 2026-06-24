@@ -3,6 +3,56 @@
 const { test, expect } = require('@playwright/test');
 
 // ============================================================
+//  外部リソースモック（テスト環境ではタイムアウトするため）
+// ============================================================
+// Supabase CDN と Google Fonts をインターセプトして即返却。
+// page.reload() が外部リソース待ちでタイムアウトするのを防ぐ。
+// app.js は window.sbClient が未定義の場合はローカルのみモードで動作する。
+test.beforeEach(async ({ page }) => {
+  // Google Fonts を空レスポンスで返す
+  await page.route('https://fonts.googleapis.com/**', route =>
+    route.fulfill({ status: 200, contentType: 'text/css', body: '' })
+  );
+  await page.route('https://fonts.gstatic.com/**', route =>
+    route.fulfill({ status: 200, contentType: 'font/woff2', body: '' })
+  );
+
+  // Supabase CDN を最小スタブで返す
+  await page.route('https://cdn.jsdelivr.net/**', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: [
+        '(function(){',
+        '  const noop = async () => ({ data: null, error: null });',
+        '  const chain = () => ({',
+        '    select: chain, eq: chain, gte: chain, lte: chain,',
+        '    order: noop, single: noop,',
+        '    insert: () => ({ select: () => ({ single: noop }) }),',
+        '    upsert: () => ({ select: () => ({ single: noop }) }),',
+        '    delete: () => ({ eq: () => noop() }),',
+        '  });',
+        '  window.supabase = {',
+        '    createClient: () => ({',
+        '      auth: {',
+        '        getUser: async () => ({ data: { user: null } }),',
+        '        signUp: noop,',
+        '        signInWithPassword: noop,',
+        '        signInWithOAuth: noop,',
+        '        signOut: noop,',
+        '        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),',
+        '      },',
+        '      from: () => chain(),',
+        '      functions: { invoke: async () => ({ data: null, error: new Error("CDN stub") }) },',
+        '    }),',
+        '  };',
+        '})();',
+      ].join('\n'),
+    });
+  });
+});
+
+// ============================================================
 //  ヘルパー
 // ============================================================
 async function clearAppStorage(page) {
