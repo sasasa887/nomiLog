@@ -40,8 +40,7 @@ const CHAR_LEVELS = [
 const RISK_LABELS = ['記録なし','良好','適量内','注意','危険','深刻'];
 // 色に依存せず形で識別できるアイコン（ユニバーサルデザイン）
 const RISK_ICONS  = ['－','☘️','◎','△','⚠️','☠️'];
-// DAY_NAMES, dateToKey, keyToDate, formatDateJP,
-// calcGram, calcKcalAlc, toLocalDateInput, getKeysInRange は lib/calc.js で定義
+const DAY_NAMES   = ['日','月','火','水','木','金','土'];
 
 // ============================================================
 //  STATE
@@ -61,8 +60,18 @@ const state = {
 // ============================================================
 //  DATE HELPERS
 // ============================================================
-// dateToKey / keyToDate / formatDateJP は lib/calc.js を参照
+function dateToKey(d) {
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
 function todayKey() { return dateToKey(new Date()); }
+function keyToDate(k) {
+  const [y,m,d] = k.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function formatDateJP(key) {
+  const d = keyToDate(key);
+  return `${d.getMonth()+1}月${d.getDate()}日(${DAY_NAMES[d.getDay()]})`;
+}
 
 // ============================================================
 //  STORAGE — LOG
@@ -126,7 +135,12 @@ function getAllHistoryStats() {
   return { totalPrice, totalGram, totalKcal, recordDays, firstDate };
 }
 
-// getKeysInRange は lib/calc.js を参照
+// Get all date keys that have log data (scan last N days + month range)
+function getKeysInRange(startDate, endDate) {
+  const keys=[]; const cur=new Date(startDate);
+  while(cur<=endDate){ keys.push(dateToKey(cur)); cur.setDate(cur.getDate()+1); }
+  return keys;
+}
 
 // ============================================================
 //  STORAGE — PROFILE & CUSTOM DRINKS
@@ -167,7 +181,13 @@ function showToast(msg) {
 //  RISK LEVEL
 // ============================================================
 function getRiskLevel(gram) {
-  return calcRiskLevel(gram, getLimit());
+  const lim=getLimit();
+  if(gram<=0) return 0;
+  if(gram<=lim*0.5) return 1;
+  if(gram<=lim) return 2;
+  if(gram<=lim*2) return 3;
+  if(gram<=lim*3) return 4;
+  return 5;
 }
 
 // 危険度の凡例を生成（色＋アイコン＋ラベルの三重表現でユニバーサルデザイン）
@@ -186,7 +206,11 @@ function renderLegend() {
   }).join('');
 }
 
-// calcGram / calcKcalAlc は lib/calc.js を参照
+// ============================================================
+//  CALC HELPERS
+// ============================================================
+const calcGram    = (ml,pct) => Math.round(ml*(pct/100)*0.8*10)/10;
+const calcKcalAlc = (ml,pct) => Math.round(ml*(pct/100)*0.8*7.1);
 
 // ============================================================
 //  PROFILE  (view / edit モード管理)
@@ -932,7 +956,13 @@ function updateTplPreview() {
 // ============================================================
 //  ADD DATE SELECTOR
 // ============================================================
-// toLocalDateInput は lib/calc.js を参照
+// ローカルタイムの YYYY-MM-DD 文字列（input[type=date]用）
+function toLocalDateInput(d) {
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 
 function initAddDate() {
   const input=document.getElementById('add-date');
@@ -1311,56 +1341,6 @@ async function quickAddByAI() {
 }
 
 // ============================================================
-//  AI AUTO-FILL
-// ============================================================
-let _aiDebounceTimer = null;
-
-function onTplNameInput() {
-  clearTimeout(_aiDebounceTimer);
-  const name = document.getElementById('tpl-name').value.trim();
-  const btn = document.getElementById('btn-ai-fill');
-  if (!name) { btn.textContent = '🤖 AI自動入力'; btn.disabled = false; return; }
-  btn.textContent = '⏳ 待機中…';
-  btn.disabled = true;
-  _aiDebounceTimer = setTimeout(() => aiAutoFillTemplate(), 1200);
-}
-
-async function aiAutoFillTemplate() {
-  const name = document.getElementById('tpl-name').value.trim();
-  if (!name) return;
-
-  const btn = document.getElementById('btn-ai-fill');
-  btn.textContent = '⏳ 検索中…';
-  btn.disabled = true;
-
-  try {
-    const { data, error } = await window.sbClient.functions.invoke('sake-lookup', {
-      body: { name },
-    });
-
-    if (error) { showToast(`❌ ${error.message || '通信エラー'}`); return; }
-
-    if (data.icon)  document.getElementById('tpl-icon').value  = data.icon;
-    if (data.ml)    document.getElementById('tpl-ml').value    = data.ml;
-    if (data.pct)   document.getElementById('tpl-pct').value   = data.pct;
-    if (data.kcal)  document.getElementById('tpl-kcal').value  = data.kcal;
-    if (data.price) document.getElementById('tpl-price').value = data.price;
-    updateTplPreview();
-    showToast('✨ AI自動入力完了！内容を確認してください');
-  } catch (e) {
-    showToast('❌ 通信エラーが発生しました');
-    console.error(e);
-  } finally {
-    btn.textContent = '🤖 AI自動入力';
-    btn.disabled = false;
-  }
-}
-
-function saveApiKey() {}
-function clearApiKey() {}
-function updateApiKeyStatus() {}
-
-// ============================================================
 //  INIT
 // ============================================================
 loadState();
@@ -1445,6 +1425,9 @@ function switchAuthTab(mode) {
   document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
   document.getElementById('auth-tab-signup').classList.toggle('active', mode==='signup');
   document.getElementById('auth-submit').textContent = mode==='login' ? 'ログイン' : '新規登録';
+  // タブ切替時は確認待ちバナーを隠す
+  const banner = document.getElementById('confirm-pending');
+  if (banner) banner.style.display = 'none';
 }
 
 async function handleAuthSubmit() {
@@ -1458,7 +1441,9 @@ async function handleAuthSubmit() {
     if (_authMode === 'signup') {
       const { needsConfirm } = await signUpEmail(email, password);
       if (needsConfirm) {
-        showToast('📧 確認メールを送信しました。メール内のリンクを開いてください');
+        showToast('📧 確認メールを送信しました');
+        const banner = document.getElementById('confirm-pending');
+        if (banner) banner.style.display = 'block';
       } else {
         showToast('✅ 登録しました！データを同期します');
       }
@@ -1471,6 +1456,18 @@ async function handleAuthSubmit() {
   } finally {
     btn.disabled = false;
     btn.textContent = _authMode==='login' ? 'ログイン' : '新規登録';
+  }
+}
+
+// 確認メールを再送
+async function handleResendConfirm() {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { showToast('⚠️ メールアドレスを入力してください'); return; }
+  try {
+    await resendConfirmEmail(email);
+    showToast('📧 確認メールを再送しました');
+  } catch (e) {
+    showToast('⚠️ ' + jpAuthError(e));
   }
 }
 

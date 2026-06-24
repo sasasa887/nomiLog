@@ -293,7 +293,7 @@
     </div>
     <div class="drinks-grid" id="my-drinks-grid"></div>
     <button class="btn-add-template" onclick="showTemplateForm(null)">
-      ＋ 手動で詳細を入力
+      ＋ テンプレートを追加
     </button>
 
     <!-- Template form -->
@@ -301,12 +301,9 @@
       <div class="card-title" id="tpl-form-title">テンプレートを追加</div>
       <input type="hidden" id="tpl-edit-id">
       <div class="custom-input-grid">
-        <div class="form-group" style="grid-column:1/-1">
+        <div class="form-group">
           <label>名前</label>
-          <div class="ai-fill-row">
-            <input type="text" id="tpl-name" placeholder="獺祭 純米大吟醸" oninput="onTplNameInput()">
-            <button id="btn-ai-fill" class="btn-ai-fill" onclick="aiAutoFillTemplate()" type="button">🤖 AI自動入力</button>
-          </div>
+          <input type="text" id="tpl-name" placeholder="梅酒">
         </div>
         <div class="form-group">
           <label>アイコン</label>
@@ -501,8 +498,8 @@
       </div>
 
       <div class="auth-divider"><span>または</span></div>
-      <button class="btn-google" disabled style="opacity:0.5;cursor:not-allowed;">
-        <span class="g-icon">G</span> Googleで続ける（準備中）
+      <button class="btn-google" onclick="handleGoogleLogin()">
+        <span class="g-icon">G</span> Googleで続ける
       </button>
     </div>
 
@@ -782,7 +779,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 <script src="sync.js"></script>
-<script src="lib/calc.js"></script>
+<script src="billing.js"></script>
 <script src="app.js"></script>
 <script src="selftest.js"></script>
 </body>

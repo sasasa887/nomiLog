@@ -225,16 +225,16 @@ test.describe('プロフィール設定', () => {
 });
 
 // ============================================================
-//  Googleログインボタン（準備中）
+//  Googleログインボタン
 // ============================================================
 test.describe('Googleログインボタン', () => {
-  test('Googleログインボタンが「準備中」で disabled になっている', async ({ page }) => {
+  test('Googleログインボタンが表示されて有効になっている', async ({ page }) => {
     await page.goto('/');
     await page.locator('#tab-profile').click();
     const googleBtn = page.locator('.btn-google');
     await expect(googleBtn).toBeVisible();
-    await expect(googleBtn).toBeDisabled();
-    await expect(googleBtn).toContainText('準備中');
+    await expect(googleBtn).toBeEnabled();
+    await expect(googleBtn).toContainText('Google');
   });
 });
 
