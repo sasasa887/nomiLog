@@ -191,6 +191,86 @@ test.describe('マイテンプレート', () => {
     await page.getByRole('button', { name: '保存' }).click();
     await expect(page.locator('#toast')).toHaveClass(/show/);
   });
+
+  test('テンプレートをクリックするとホームに遷移して記録に追加される', async ({ page }) => {
+    await page.locator('#tpl-name').fill('梅酒');
+    await page.locator('#tpl-icon').fill('🍹');
+    await page.locator('#tpl-ml').fill('150');
+    await page.locator('#tpl-pct').fill('8');
+    await page.locator('#tpl-kcal').fill('120');
+    await page.getByRole('button', { name: '保存' }).click();
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toBeVisible();
+
+    await page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' }).click();
+
+    await expect(page.locator('#page-home')).toHaveClass(/active/);
+    await expect(page.locator('#log-list .log-item')).toHaveCount(1);
+  });
+
+  test('✏️ 編集ボタンをクリックすると既存データがフォームに読み込まれる', async ({ page }) => {
+    await page.locator('#tpl-name').fill('梅酒');
+    await page.locator('#tpl-icon').fill('🍹');
+    await page.locator('#tpl-ml').fill('150');
+    await page.locator('#tpl-pct').fill('8');
+    await page.locator('#tpl-kcal').fill('120');
+    await page.getByRole('button', { name: '保存' }).click();
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toBeVisible();
+
+    await page.locator('#my-drinks-grid .btn-edit-tpl').click();
+
+    await expect(page.locator('#template-form')).toBeVisible();
+    await expect(page.locator('#tpl-name')).toHaveValue('梅酒');
+    await expect(page.locator('#tpl-ml')).toHaveValue('150');
+    await expect(page.locator('#tpl-pct')).toHaveValue('8');
+  });
+
+  test('🗑 削除ボタンをクリックすると確認モーダルが開く', async ({ page }) => {
+    await page.locator('#tpl-name').fill('梅酒');
+    await page.locator('#tpl-icon').fill('🍹');
+    await page.locator('#tpl-ml').fill('150');
+    await page.locator('#tpl-pct').fill('8');
+    await page.locator('#tpl-kcal').fill('120');
+    await page.getByRole('button', { name: '保存' }).click();
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toBeVisible();
+
+    await page.locator('#my-drinks-grid .btn-del-tpl').click();
+
+    await expect(page.locator('#confirm-modal')).toBeVisible();
+    await expect(page.locator('#confirm-target')).toContainText('梅酒');
+  });
+
+  test('削除確認で「削除する」をクリックするとグリッドから消える', async ({ page }) => {
+    await page.locator('#tpl-name').fill('梅酒');
+    await page.locator('#tpl-icon').fill('🍹');
+    await page.locator('#tpl-ml').fill('150');
+    await page.locator('#tpl-pct').fill('8');
+    await page.locator('#tpl-kcal').fill('120');
+    await page.getByRole('button', { name: '保存' }).click();
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toBeVisible();
+
+    await page.locator('#my-drinks-grid .btn-del-tpl').click();
+    await page.locator('#confirm-modal .confirm-btn-delete').click();
+
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toHaveCount(0);
+  });
+
+  test('×2,3 ボタンで数量モーダルが開き ×2 を選ぶと 2件記録される', async ({ page }) => {
+    await page.locator('#tpl-name').fill('梅酒');
+    await page.locator('#tpl-icon').fill('🍹');
+    await page.locator('#tpl-ml').fill('150');
+    await page.locator('#tpl-pct').fill('8');
+    await page.locator('#tpl-kcal').fill('120');
+    await page.getByRole('button', { name: '保存' }).click();
+    await expect(page.locator('#my-drinks-grid .my-drink-btn').filter({ hasText: '梅酒' })).toBeVisible();
+
+    await page.locator('#my-drinks-grid .btn-qty-tpl').click();
+    await expect(page.locator('#qty-modal')).toBeVisible();
+
+    await page.locator('.qty-num-btn').filter({ hasText: '×2' }).click();
+
+    await expect(page.locator('#page-home')).toHaveClass(/active/);
+    await expect(page.locator('#log-list .log-item')).toHaveCount(2);
+  });
 });
 
 // ============================================================
@@ -225,16 +305,16 @@ test.describe('プロフィール設定', () => {
 });
 
 // ============================================================
-//  Googleログインボタン
+//  Googleログインボタン（準備中）
 // ============================================================
 test.describe('Googleログインボタン', () => {
-  test('Googleログインボタンが表示されて有効になっている', async ({ page }) => {
+  test('Googleログインボタンが「準備中」で disabled になっている', async ({ page }) => {
     await page.goto('/');
     await page.locator('#tab-profile').click();
     const googleBtn = page.locator('.btn-google');
     await expect(googleBtn).toBeVisible();
-    await expect(googleBtn).toBeEnabled();
-    await expect(googleBtn).toContainText('Google');
+    await expect(googleBtn).toBeDisabled();
+    await expect(googleBtn).toContainText('準備中');
   });
 });
 
