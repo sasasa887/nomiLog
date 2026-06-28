@@ -172,7 +172,7 @@
         </div>
         <div class="char-info">
           <div class="char-name" id="char-name">ヘロヘロ</div>
-          <div class="char-streak" id="char-streak">連続セーフ: 0日</div>
+          <div class="char-streak" id="char-streak">記録した日数: 0日 📝</div>
           <div class="char-progress-wrap">
             <div class="char-progress-track">
               <div class="char-progress-fill" id="char-progress" style="width:0%"></div>
@@ -272,11 +272,6 @@
     <div class="section-label">定番テンプレート</div>
     <div class="drinks-grid" id="drinks-grid"></div>
 
-    <!-- My Templates -->
-    <div class="section-label" style="margin-top:18px">
-      マイテンプレート
-      <span style="font-size:0.6rem;color:var(--muted);letter-spacing:0;text-transform:none;margin-left:6px">保存済みのお酒</span>
-    </div>
     <!-- AI クイック追加 -->
     <div class="card ai-quick-add-card">
       <div class="card-title">🤖 名前だけで追加</div>
@@ -288,6 +283,11 @@
       <p id="quick-add-status" class="quick-add-status"></p>
     </div>
 
+    <!-- My Templates -->
+    <div class="section-label" style="margin-top:18px">
+      マイテンプレート
+      <span style="font-size:0.6rem;color:var(--muted);letter-spacing:0;text-transform:none;margin-left:6px">保存済みのお酒</span>
+    </div>
     <div id="my-templates-empty" class="empty-log" style="display:none">
       まだカスタムテンプレートがありません
     </div>
@@ -336,6 +336,15 @@
     <!-- One-time custom input -->
     <div class="card" style="margin-top:16px">
       <div class="card-title">今回だけの入力</div>
+
+      <!-- 名前から自動入力 -->
+      <div class="name-search-row">
+        <input type="text" id="drink-name-search" class="name-search-input"
+               placeholder="お酒の名前で検索（例：ハイボール）"
+               oninput="onDrinkNameSearch()" onkeydown="if(event.key==='Enter')onDrinkNameSearch()">
+      </div>
+      <div class="drink-candidates" id="drink-candidates"></div>
+
       <div class="custom-input-grid">
         <div class="form-group">
           <label>量 (ml)</label>

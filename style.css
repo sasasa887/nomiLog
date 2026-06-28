@@ -421,40 +421,8 @@ header .tagline {
 }
 .date-sel-note { font-size:0.65rem; color:var(--muted); margin-top:6px; }
 
-/* ---------- AI Quick Add ---------- */
-.ai-quick-add-card { padding:14px 16px; margin-bottom:12px; }
-.ai-quick-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
-.ai-quick-row input { flex:1; min-width:0; }
-.btn-quick-add {
-  white-space:nowrap; flex-shrink:0;
-  background:linear-gradient(135deg,#8b5cf6,#6d28d9);
-  color:#fff; border:none; border-radius:8px;
-  padding:10px 16px; font-size:0.8rem;
-  font-family:'Noto Sans JP',sans-serif;
-  cursor:pointer; transition:opacity 0.2s;
-  font-weight:500;
-}
-.btn-quick-add:hover  { opacity:0.85; }
-.btn-quick-add:disabled { opacity:0.5; cursor:not-allowed; }
-.quick-add-status {
-  font-size:0.72rem; color:var(--muted);
-  margin-top:6px; min-height:16px; text-align:center;
-}
-
 /* ---------- Template Form ---------- */
 .custom-input-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.ai-fill-row { display:flex; gap:8px; align-items:center; }
-.ai-fill-row input { flex:1; min-width:0; }
-.btn-ai-fill {
-  white-space:nowrap; flex-shrink:0;
-  background:linear-gradient(135deg,#8b5cf6,#6d28d9);
-  color:#fff; border:none; border-radius:8px;
-  padding:9px 12px; font-size:0.72rem;
-  font-family:'Noto Sans JP',sans-serif;
-  cursor:pointer; transition:opacity 0.2s;
-}
-.btn-ai-fill:hover { opacity:0.85; }
-.btn-ai-fill:disabled { opacity:0.5; cursor:not-allowed; }
 .custom-preview { text-align:center; padding:8px 0; font-size:0.78rem; color:var(--muted); min-height:36px; }
 .btn-cancel {
   flex:1; margin-top:10px;
@@ -1632,6 +1600,55 @@ header .tagline {
   margin-top: 10px;
   padding-bottom: 8px;
 }
+
+/* ---------- 名前から自動入力（お酒検索）---------- */
+.name-search-row { margin-bottom: 10px; }
+.name-search-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--amber);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: 'Noto Sans JP', sans-serif;
+  box-sizing: border-box;
+}
+.name-search-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(240,165,0,0.25); }
+.name-search-input::placeholder { color: var(--muted); }
+
+.drink-candidates { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.cand-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: var(--card2, #1f232c);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.15s;
+}
+.cand-item:hover { border-color: var(--amber); background: var(--amber-glow); }
+.cand-item:active { transform: scale(0.99); }
+.cand-icon { font-size: 1.4rem; flex-shrink: 0; }
+.cand-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cand-name { font-size: 0.86rem; font-weight: 700; color: var(--text); }
+.cand-detail { font-size: 0.66rem; color: var(--muted); }
+.cand-arrow { font-size: 1.1rem; color: var(--amber); font-weight: 700; flex-shrink: 0; }
+.cand-empty, .cand-selected {
+  font-size: 0.74rem;
+  color: var(--muted);
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  line-height: 1.5;
+}
+.cand-selected { color: var(--green); border-style: solid; border-color: rgba(78,202,139,0.3); }
 
 /* ---------- Scrollbar ---------- */
 ::-webkit-scrollbar       { width:4px; }

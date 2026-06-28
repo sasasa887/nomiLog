@@ -29,18 +29,95 @@ const BENEFITS = [
 ];
 
 const CHAR_LEVELS = [
-  { threshold:0,  emoji:'😵', name:'ヘロヘロ',     next:4  },
-  { threshold:4,  emoji:'😐', name:'ぼんやり',     next:10 },
-  { threshold:10, emoji:'😊', name:'元気',         next:17 },
-  { threshold:17, emoji:'💪', name:'スッキリ',     next:24 },
-  { threshold:24, emoji:'🌟', name:'輝いてる！',   next:30 },
-  { threshold:30, emoji:'✨', name:'パーフェクト', next:null },
+  { threshold:0,  emoji:'🥚', name:'はじまり',     next:3   },
+  { threshold:3,  emoji:'🐣', name:'記録デビュー', next:7   },
+  { threshold:7,  emoji:'😊', name:'習慣化のきざし',next:14 },
+  { threshold:14, emoji:'💪', name:'記録マスター', next:30  },
+  { threshold:30, emoji:'🌟', name:'継続の達人',   next:60  },
+  { threshold:60, emoji:'✨', name:'のみログの主', next:null },
 ];
 
 const RISK_LABELS = ['記録なし','良好','適量内','注意','危険','深刻'];
 // 色に依存せず形で識別できるアイコン（ユニバーサルデザイン）
 const RISK_ICONS  = ['－','☘️','◎','△','⚠️','☠️'];
 const DAY_NAMES   = ['日','月','火','水','木','金','土'];
+
+// ============================================================
+//  お酒辞書（名前あいまい検索用）
+//  ml=代表的な量, pct=度数, kcal=その量での目安カロリー
+//  aliases=別名・表記ゆれ（部分一致で拾う）
+// ============================================================
+const DRINK_DICTIONARY = [
+  // ── ビール系 ──
+  { icon:'🍺', name:'ビール',         ml:350, pct:5,   kcal:140, aliases:['びーる','beer','生ビール','缶ビール','ラガー','ピルスナー','プレモル','スーパードライ','一番搾り','エビス','ヱビス','アサヒ','キリン','サッポロ','モルツ'] },
+  { icon:'🍺', name:'黒ビール',       ml:350, pct:5,   kcal:145, aliases:['くろびーる','スタウト','ポーター','ギネス'] },
+  { icon:'🍺', name:'クラフトビール', ml:350, pct:6,   kcal:160, aliases:['くらふと','ipa','エール','ペールエール','craft'] },
+  { icon:'🍺', name:'ノンアルビール', ml:350, pct:0,   kcal:25,  aliases:['ノンアル','のんある','ノンアルコール','0.00','ゼロビール'] },
+  // ── サワー・チューハイ系 ──
+  { icon:'🍋', name:'レモンサワー',   ml:350, pct:5,   kcal:165, aliases:['れもんさわー','檸檬サワー','レモンチューハイ','レモンハイ','レサワ'] },
+  { icon:'🍊', name:'グレフルサワー', ml:350, pct:5,   kcal:160, aliases:['ぐれふる','グレープフルーツサワー','グレフルチューハイ'] },
+  { icon:'🍇', name:'カシスサワー',   ml:350, pct:5,   kcal:170, aliases:['かしす','カシスソーダ'] },
+  { icon:'🍹', name:'チューハイ',     ml:350, pct:5,   kcal:160, aliases:['ちゅーはい','酎ハイ','サワー','缶チューハイ','ストロングゼロ','ストゼロ','氷結','ほろよい','-196','本搾り'] },
+  // ── ハイボール・ウイスキー系 ──
+  { icon:'🥃', name:'ハイボール',     ml:350, pct:7,   kcal:175, aliases:['はいぼーる','ハイボ','角ハイ','ウイスキーソーダ','highball','ハイボール濃いめ','濃いめ'] },
+  { icon:'🥃', name:'ウイスキー',     ml:30,  pct:40,  kcal:71,  aliases:['ういすきー','whisky','whiskey','ロック','水割り','角','ジムビーム','山崎','白州','ジャックダニエル'] },
+  { icon:'🥃', name:'ブランデー',     ml:30,  pct:40,  kcal:75,  aliases:['ぶらんでー','brandy','コニャック'] },
+  // ── 日本酒・焼酎 ──
+  { icon:'🍶', name:'日本酒',         ml:180, pct:15,  kcal:185, aliases:['にほんしゅ','sake','清酒','冷酒','熱燗','ぬる燗','一合','獺祭','八海山','久保田'] },
+  { icon:'🍶', name:'焼酎',           ml:100, pct:25,  kcal:146, aliases:['しょうちゅう','芋焼酎','麦焼酎','米焼酎','黒霧島','いいちこ','森伊蔵','焼酎ロック','焼酎水割り'] },
+  { icon:'🍶', name:'梅酒',           ml:90,  pct:13,  kcal:140, aliases:['うめしゅ','梅酒ロック','梅酒ソーダ','チョーヤ'] },
+  // ── ワイン・スパークリング ──
+  { icon:'🍷', name:'赤ワイン',       ml:120, pct:13,  kcal:90,  aliases:['あかわいん','red wine','赤'] },
+  { icon:'🥂', name:'白ワイン',       ml:120, pct:12,  kcal:88,  aliases:['しろわいん','white wine','白'] },
+  { icon:'🍷', name:'ワイン',         ml:120, pct:12,  kcal:88,  aliases:['わいん','wine','グラスワイン'] },
+  { icon:'🥂', name:'スパークリング', ml:120, pct:12,  kcal:90,  aliases:['すぱーくりんぐ','シャンパン','champagne','スパークリングワイン','プロセッコ','カヴァ'] },
+  { icon:'🥂', name:'ロゼワイン',     ml:120, pct:12,  kcal:89,  aliases:['ろぜ','rose','ロゼ'] },
+  // ── カクテル系 ──
+  { icon:'🍸', name:'カクテル',       ml:150, pct:10,  kcal:180, aliases:['かくてる','cocktail','モヒート','ジントニック','カシスオレンジ','スクリュードライバー','マルガリータ','マティーニ','ファジーネーブル','コークハイ'] },
+  { icon:'🍹', name:'カクテル(甘口)', ml:200, pct:8,   kcal:220, aliases:['ピニャコラーダ','カルーアミルク','ミルク系','甘いカクテル'] },
+  // ── その他 ──
+  { icon:'🍺', name:'ホッピー',       ml:350, pct:5,   kcal:100, aliases:['ほっぴー','hoppy'] },
+  { icon:'🍶', name:'マッコリ',       ml:200, pct:6,   kcal:130, aliases:['まっこり','makgeolli'] },
+  { icon:'🍹', name:'紹興酒',         ml:100, pct:15,  kcal:130, aliases:['しょうこうしゅ','老酒'] },
+  { icon:'🍸', name:'テキーラ',       ml:30,  pct:40,  kcal:70,  aliases:['てきーら','tequila','ショット'] },
+  { icon:'🍸', name:'ウォッカ',       ml:30,  pct:40,  kcal:70,  aliases:['うぉっか','vodka'] },
+  { icon:'🍸', name:'ジン',           ml:30,  pct:40,  kcal:70,  aliases:['じん','gin'] },
+  { icon:'🍹', name:'ラム',           ml:30,  pct:40,  kcal:70,  aliases:['らむ','rum','ラム酒'] },
+];
+
+// 文字列を正規化（ひらがな/カタカナ・大小・スペース・全半角を吸収）
+function normalizeDrinkText(s) {
+  if (!s) return '';
+  let t = s.trim().toLowerCase();
+  // 全角英数→半角
+  t = t.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  // カタカナ→ひらがな
+  t = t.replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  // スペース・記号除去
+  t = t.replace(/[\s　・,，.。\-_]/g, '');
+  return t;
+}
+
+// 入力名から辞書をあいまい検索し、候補配列を返す（スコア順）
+function searchDrinkDictionary(input) {
+  const q = normalizeDrinkText(input);
+  if (!q) return [];
+  const scored = [];
+  for (const d of DRINK_DICTIONARY) {
+    // 検索対象＝名前＋全エイリアス
+    const keys = [d.name, ...(d.aliases || [])].map(normalizeDrinkText);
+    let best = 0;
+    for (const k of keys) {
+      if (!k) continue;
+      if (k === q)            { best = Math.max(best, 100); }  // 完全一致
+      else if (q.includes(k)) { best = Math.max(best, 80); }   // 入力がキーを含む（例:プレモルビール⊃ビール）
+      else if (k.includes(q)) { best = Math.max(best, 60); }   // キーが入力を含む（例:ビール⊃ビー）
+    }
+    if (best > 0) scored.push({ drink: d, score: best });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map(s => s.drink);
+}
 
 // ============================================================
 //  STATE
@@ -731,6 +808,54 @@ function addCustom() {
   document.getElementById('custom-name').value='';
   document.getElementById('custom-price').value='';
   document.getElementById('custom-preview').innerHTML='';
+  // 検索欄もクリア
+  const s=document.getElementById('drink-name-search');
+  if(s) s.value='';
+  const c=document.getElementById('drink-candidates');
+  if(c) c.innerHTML='';
+}
+
+// 名前検索：入力のたびに辞書をあいまい検索して候補を出す
+function onDrinkNameSearch() {
+  const input=document.getElementById('drink-name-search').value;
+  const el=document.getElementById('drink-candidates');
+  if(!el) return;
+  const q=input.trim();
+  if(q.length===0){ el.innerHTML=''; return; }
+
+  const results=searchDrinkDictionary(q);
+  if(results.length===0){
+    el.innerHTML=`<div class="cand-empty">該当なし。下の欄に量と度数を直接入力してください。</div>`;
+    return;
+  }
+  // 上位6件まで候補表示
+  el.innerHTML=results.slice(0,6).map((d,i)=>{
+    const g=calcGram(d.ml,d.pct);
+    return `
+      <button class="cand-item" onclick="selectDrinkCandidate(${DRINK_DICTIONARY.indexOf(d)})">
+        <span class="cand-icon">${d.icon}</span>
+        <span class="cand-info">
+          <span class="cand-name">${d.name}</span>
+          <span class="cand-detail">${d.ml}ml · ${d.pct}% ・ 🍶${g}g ・ 🔥${d.kcal}kcal</span>
+        </span>
+        <span class="cand-arrow">＋</span>
+      </button>`;
+  }).join('');
+}
+
+// 候補を選んだら下の入力欄に流し込む（量・度数・名前・カロリー）
+function selectDrinkCandidate(dictIndex) {
+  const d=DRINK_DICTIONARY[dictIndex];
+  if(!d) return;
+  document.getElementById('custom-ml').value=d.ml;
+  document.getElementById('custom-pct').value=d.pct;
+  document.getElementById('custom-name').value=d.name;
+  updateCustomPreview();
+  // 候補を閉じる
+  document.getElementById('drink-candidates').innerHTML=
+    `<div class="cand-selected">✅ 「${d.name}」を選びました。量・度数を調整して「追加する」を押してください</div>`;
+  // 入力欄へスクロール
+  document.getElementById('custom-ml').scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 function removeLogItem(key, i) {
@@ -1219,37 +1344,49 @@ function getSafeDays30() {
   }
   return count;
 }
+// 入力した日数（記録が1件以上ある日の累計数）をlocalStorageから数える
+function getRecordDays() {
+  let days=0;
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k||!k.startsWith('nomi_log_')) continue;
+    let log;
+    try{ log=JSON.parse(localStorage.getItem(k)); }catch(e){ continue; }
+    if(Array.isArray(log)&&log.length>0) days++;
+  }
+  return days;
+}
 function renderCharacter() {
-  const streak=getStreak();
-  const safeDays30=getSafeDays30();
+  const recordDays=getRecordDays();   // 入力した日数（累計）
+  const safeDays30=getSafeDays30();   // 年齢改善の計算用に残す
 
-  // Determine level
+  // Determine level（記録日数で成長）
   let level=CHAR_LEVELS[0], levelIdx=0;
   for(let i=0;i<CHAR_LEVELS.length;i++){
-    if(safeDays30>=CHAR_LEVELS[i].threshold){ level=CHAR_LEVELS[i]; levelIdx=i+1; }
+    if(recordDays>=CHAR_LEVELS[i].threshold){ level=CHAR_LEVELS[i]; levelIdx=i+1; }
   }
   const nextThreshold=level.next;
   const progressPct=nextThreshold
-    ? Math.min(((safeDays30-level.threshold)/(nextThreshold-level.threshold))*100,100)
+    ? Math.min(((recordDays-level.threshold)/(nextThreshold-level.threshold))*100,100)
     : 100;
 
   document.getElementById('char-emoji').textContent=level.emoji;
   document.getElementById('char-level-badge').textContent=`Lv.${levelIdx}`;
   document.getElementById('char-name').textContent=level.name;
-  document.getElementById('char-streak').textContent=`連続セーフ: ${streak}日 🔥`;
+  document.getElementById('char-streak').textContent=`記録した日数: ${recordDays}日 📝`;
   document.getElementById('char-progress').style.width=progressPct+'%';
   document.getElementById('char-progress-label').textContent=
-    nextThreshold?`次のレベルまで: あと${nextThreshold-safeDays30}日（30日間セーフ日数: ${safeDays30}/30）`:'MAX レベル達成！';
+    nextThreshold?`次のレベルまで: あと${nextThreshold-recordDays}日（記録日数: ${recordDays}日）`:'MAX レベル達成！';
 
-  // Benefits
+  // Benefits（記録日数で解放）
   document.getElementById('benefits-grid').innerHTML=BENEFITS.map(b=>{
-    const unlocked=streak>=b.days;
+    const unlocked=recordDays>=b.days;
     return `
       <div class="benefit-item ${unlocked?'unlocked':'locked'}">
         <span class="benefit-icon">${b.icon}</span>
         <div class="benefit-text">
           <span class="benefit-name">${b.name}</span>
-          <span class="benefit-days">${unlocked?'✅ 達成！':'連続'+b.days+'日で解放'}</span>
+          <span class="benefit-days">${unlocked?'✅ 達成！':'記録'+b.days+'日で解放'}</span>
         </div>
       </div>`;
   }).join('');
@@ -1282,62 +1419,6 @@ function switchTab(tab) {
   if(tab==='history') { renderCalendar(); renderPeriodStats(); }
   if(tab==='profile') { syncProfileTab(); }
   if(tab==='add')     { renderDrinksGrid(); renderMyDrinksGrid(); renderUsualSet(); }
-}
-
-// ============================================================
-//  AI QUICK ADD（名前だけで一発追加）
-// ============================================================
-async function quickAddByAI() {
-  const nameEl   = document.getElementById('quick-add-name');
-  const btn      = document.getElementById('btn-quick-add');
-  const statusEl = document.getElementById('quick-add-status');
-  const name     = nameEl.value.trim();
-
-  if (!name) { showToast('⚠️ お酒の名前を入力してください'); return; }
-
-  btn.disabled      = true;
-  btn.textContent   = '⏳ 検索中…';
-  statusEl.textContent = `「${name}」の情報をAIが調べています…`;
-
-  try {
-    const { data, error } = await window.sbClient.functions.invoke('sake-lookup', {
-      body: { name },
-    });
-
-    if (error || data.error) {
-      showToast(`❌ ${(error || data).message || '通信エラー'}`);
-      statusEl.textContent = '';
-      return;
-    }
-
-    const ml   = Number(data.ml)   || 100;
-    const pct  = Number(data.pct)  || 5;
-    const kcal = Number(data.kcal) || calcKcalAlc(ml, pct);
-    const tpl  = {
-      id:    'custom_' + Date.now(),
-      icon:  data.icon  || '🍶',
-      name,
-      sub:   `${ml}ml · ${pct}%`,
-      ml, pct, kcal,
-      price: Number(data.price) || 0,
-    };
-
-    state.customDrinks.push(tpl);
-    saveCustomDrinks();
-    if (window.Sync) Sync.mirrorSaveTemplate(tpl);
-    renderMyDrinksGrid();
-
-    nameEl.value         = '';
-    statusEl.textContent = '';
-    showToast(`✅ ${tpl.icon} ${name} をテンプレートに追加しました`);
-  } catch (e) {
-    showToast('❌ 通信エラーが発生しました');
-    statusEl.textContent = '';
-    console.error(e);
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = 'AIで追加';
-  }
 }
 
 // ============================================================
